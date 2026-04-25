@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0a0908" />
+
+<title data-i18n="meta.title">Altun Atelier — El Yapımı Altın Mücevher | İstanbul</title>
+<meta name="description" data-i18n="meta.desc"
+  content="1978'den bu yana üç kuşağın ustalığıyla tasarlanan, el yapımı altın mücevherler.">
+
+<meta property="og:title" content="Altun Atelier — Handcrafted Gold Jewelry">
+<meta property="og:description" content="Three generations of Turkish goldsmithing.">
+<meta property="og:image" content="images/hero.png">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="preload" as="image" href="images/hero.png">
+<link rel="preload" as="image" href="images/collection-1-collar.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink:    { DEFAULT:'#f4ede4', 2:'#d8cfbf', 3:'#8a8278', 4:'#5b574f' },
+          onyx:   { DEFAULT:'#0a0908', 2:'#100d0b', 3:'#15110d', 4:'#1c1814' },
+          gold:   { DEFAULT:'#c9a961', soft:'#b89653', hi:'#e8c87a', lo:'#8a6f3a' },
+          line:   'rgba(201,169,97,.18)',
+          line2:  'rgba(244,237,228,.08)',
+        },
+        fontFamily: {
+          serif: ['"Cormorant Garamond"','Georgia','serif'],
+          sans:  ['Inter','-apple-system','system-ui','sans-serif'],
+        },
+        letterSpacing: { 'kicker':'.32em', 'btn':'.22em' },
+      }
+    }
+  }
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-onyx text-ink-2 font-sans antialiased overflow-x-hidden">
+
+<!-- Film grain overlay -->
+<div class="grain pointer-events-none fixed inset-0 z-[1]" aria-hidden="true"></div>
+
+<!-- ============== NAV ============== -->
+<header id="nav" class="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 sm:px-10 lg:px-16 py-4 transition-all duration-500 bg-gradient-to-b from-onyx/85 to-transparent">
+  <a href="#home" class="flex items-center gap-3 text-ink">
+    <span class="brand-mark">A</span>
+    <span class="brand-word font-serif text-lg tracking-[.32em]">ALTUN<em class="not-italic text-gold text-[.7em] tracking-[.18em] ml-1 italic">atelier</em></span>
+  </a>
+
+  <nav class="nav-links hidden xl:flex gap-9 items-center" aria-label="Primary">
+    <a href="#collections" class="nav-a" data-i18n="nav.collections">Koleksiyonlar</a>
+    <a href="#story"       class="nav-a" data-i18n="nav.story">Hikâye</a>
+    <a href="#custom"      class="nav-a" data-i18n="nav.custom">Özel Sipariş</a>
+    <a href="#gallery"     class="nav-a" data-i18n="nav.gallery">Galeri</a>
+    <a href="#contact"     class="nav-a" data-i18n="nav.contact">İletişim</a>
+  </nav>
+
+  <div class="flex items-center gap-4 sm:gap-6">
+    <div class="flex items-center gap-1 text-ink-3 text-xs tracking-[.18em]">
+      <button class="lang-btn is-active" data-lang="tr" aria-pressed="true">TR</button>
+      <span aria-hidden="true">/</span>
+      <button class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <a href="#contact" class="hidden sm:inline-flex btn btn-ghost-gold" data-i18n="nav.cta">Randevu Al</a>
+    <button class="burger xl:hidden flex flex-col gap-[5px] p-2" aria-label="Menu" aria-expanded="false">
+      <span class="block w-5 h-px bg-ink"></span>
+      <span class="block w-5 h-px bg-ink"></span>
+      <span class="block w-5 h-px bg-ink"></span>
+    </button>
+  </div>
+</header>
+
+<!-- ============== HERO (WebGL distortion slider) ============== -->
+<section id="home" class="relative min-h-[100svh] w-full overflow-hidden">
+
+  <!-- WebGL slider mount -->
+  <div id="hero-slider" class="absolute inset-0 z-0">
+    <!-- These <img> elements load the textures, then become hidden once Three.js takes over -->
+    <img src="images/hero.png"               alt="" class="slider-src" data-slide="0" fetchpriority="high">
+    <img src="images/collection-1-collar.png" alt="" class="slider-src" data-slide="1">
+    <img src="images/craft-hands.png"         alt="" class="slider-src" data-slide="2">
+    <img src="images/lifestyle-couple.png"    alt="" class="slider-src" data-slide="3">
+    <!-- Fallback for no-JS / failed WebGL: first image as background-image is rendered via CSS -->
+    <noscript>
+      <img src="images/hero.png" alt="" class="absolute inset-0 w-full h-full object-cover">
+    </noscript>
+  </div>
+
+  <!-- Gradient overlays sit ABOVE the canvas but BELOW content -->
+  <div class="absolute inset-0 z-[1] bg-gradient-to-r from-onyx/90 via-onyx/55 to-onyx/25 pointer-events-none"></div>
+  <div class="absolute inset-0 z-[1] bg-gradient-to-t from-onyx via-onyx/20 to-transparent pointer-events-none"></div>
+  <div class="absolute -top-40 -right-40 w-[44rem] h-[44rem] rounded-full blur-[140px] opacity-50 bg-gold/20 pointer-events-none z-[1]"></div>
+
+  <!-- Foreground content -->
+  <div class="relative z-10 max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 min-h-[100svh] flex items-center">
+    <div class="max-w-2xl pt-20 sm:pt-32 pb-20 sm:pb-32">
+      <p class="kicker mb-6" data-i18n="hero.eyebrow">Üç Kuşaklık Kuyumculuk · İstanbul · 1978</p>
+
+      <!-- Slide-bound headline (changes per slide) -->
+      <h1 id="slideTitle" class="display mb-3 hero-anim" data-i18n="slides.0.title">
+        Bir el. Bir kalp.<br><em>Bir ömür</em> ışıltı.
+      </h1>
+      <p id="slideMeta" class="font-serif italic text-gold text-lg mb-7 hero-anim" data-i18n="slides.0.meta">
+        İmza Koleksiyonu
+      </p>
+
+      <p class="text-ink-2 text-lg leading-relaxed max-w-xl mb-10" data-i18n="hero.sub">
+        24 ayar gelenek, modern tasarım. Altun Atelier'de her parça,
+        ustanın elinden geçer ve sahibinin hikâyesini taşır.
+      </p>
+      <div class="flex flex-wrap gap-4 mb-10">
+        <a class="btn btn-gold" href="#contact" data-i18n="hero.cta1">Özel Tasarım Talebi</a>
+        <a class="btn btn-ghost" href="#collections" data-i18n="hero.cta2">Koleksiyonu Keşfet →</a>
+      </div>
+      <ul class="flex flex-wrap gap-x-8 gap-y-3 pt-7 border-t border-line text-[.78rem] tracking-[.16em] uppercase text-ink-3">
+        <li class="flex items-center gap-2"><span class="dot"></span><span data-i18n="hero.t1">22–24 Ayar Altın</span></li>
+        <li class="flex items-center gap-2"><span class="dot"></span><span data-i18n="hero.t2">Atölyede El Yapımı</span></li>
+        <li class="flex items-center gap-2"><span class="dot"></span><span data-i18n="hero.t3">Ömür Boyu Bakım</span></li>
+        <li class="flex items-center gap-2"><span class="dot"></span><span data-i18n="hero.t4">Sertifikalı Taşlar</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="hero-pagination" class="absolute bottom-10 right-5 sm:right-10 lg:right-16 z-10 flex flex-col gap-3 items-center" aria-label="Slider">
+    <button class="hpag is-active" data-slide="0" aria-label="Slide 1"></button>
+    <button class="hpag" data-slide="1" aria-label="Slide 2"></button>
+    <button class="hpag" data-slide="2" aria-label="Slide 3"></button>
+    <button class="hpag" data-slide="3" aria-label="Slide 4"></button>
+  </div>
+
+  <!-- Slide counter -->
+  <div class="absolute bottom-10 left-5 sm:left-10 lg:left-16 z-10 text-[.7rem] tracking-[.32em] uppercase text-ink-3 flex items-center gap-3">
+    <span id="slideIdx" class="font-serif italic text-gold text-base">01</span>
+    <span class="w-12 h-px bg-line"></span>
+    <span>04</span>
+  </div>
+
+  <a href="#promise" class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[.7rem] tracking-[.32em] uppercase text-ink-3 z-10 hidden sm:flex">
+    <span data-i18n="hero.scroll">Keşfet</span>
+    <svg viewBox="0 0 24 24" class="w-3 h-6 animate-bob"><path d="M12 4v16m0 0l-6-6m6 6l6-6" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+  </a>
+</section>
+
+<!-- ============== PROMISE ============== -->
+<section id="promise" class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-28">
+  <header class="max-w-2xl mb-14">
+    <span class="rule"></span>
+    <p class="kicker mb-4" data-i18n="promise.kicker">Söz Verdiklerimiz</p>
+    <h2 class="display display-md" data-i18n="promise.title">
+      Mücevher değil, <em>miras</em> yaratıyoruz.
+    </h2>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-line">
+    <article class="card p-10 bg-onyx hover:bg-onyx-3 transition-colors duration-500">
+      <p class="card-num">01</p>
+      <h3 class="font-serif text-2xl text-ink mb-3 leading-tight" data-i18n="promise.c1.t">Saf Altın, Kanıtlı</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="promise.c1.b">Her parça için ayar belgesi. Ne fazlası, ne eksiği.</p>
+      <div class="gt-wrap" aria-hidden="true">
+        <div class="gt-base">
+          <div class="gt-hole"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+        </div>
+      </div>
+    </article>
+    <article class="card p-10 bg-onyx hover:bg-onyx-3 transition-colors duration-500">
+      <p class="card-num">02</p>
+      <h3 class="font-serif text-2xl text-ink mb-3 leading-tight" data-i18n="promise.c2.t">El İşçiliği</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="promise.c2.b">Çekiç, eğe, ısı. Geleneksel teknik, modern tasarım — fabrika değil, atölye.</p>
+      <div class="gt-wrap" aria-hidden="true">
+        <div class="gt-base">
+          <div class="gt-hole"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+        </div>
+      </div>
+    </article>
+    <article class="card p-10 bg-onyx hover:bg-onyx-3 transition-colors duration-500">
+      <p class="card-num">03</p>
+      <h3 class="font-serif text-2xl text-ink mb-3 leading-tight" data-i18n="promise.c3.t">Size Özel</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="promise.c3.b">Bir taslak, bir görüşme, sizin parmağınıza. Tek bir kişi için tek bir parça.</p>
+      <div class="gt-wrap" aria-hidden="true">
+        <div class="gt-base">
+          <div class="gt-hole"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+        </div>
+      </div>
+    </article>
+    <article class="card p-10 bg-onyx hover:bg-onyx-3 transition-colors duration-500">
+      <p class="card-num">04</p>
+      <h3 class="font-serif text-2xl text-ink mb-3 leading-tight" data-i18n="promise.c4.t">Ömür Boyu</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="promise.c4.b">Bakım, cilalama, ölçü değişimi. Aldığınız parça yıllarca ilk günkü gibi kalır.</p>
+      <div class="gt-wrap" aria-hidden="true">
+        <div class="gt-base">
+          <div class="gt-hole"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+          <div class="gt-plate"></div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============== COLLECTIONS (real product images) ============== -->
+<section id="collections" class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-28">
+  <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-14">
+    <div class="max-w-xl">
+      <span class="rule"></span>
+      <p class="kicker mb-4" data-i18n="col.kicker">Koleksiyonlar</p>
+      <h2 class="display display-md" data-i18n="col.title">İmza Parçalar</h2>
+    </div>
+    <p class="text-ink-3 max-w-md text-sm leading-relaxed" data-i18n="col.lede">
+      Beğendiğiniz parça için WhatsApp üzerinden bilgi alabilirsiniz.
+    </p>
+  </header>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+
+    <!-- Card 1: Statement collar (large dramatic) -->
+    <article class="card-prod sm:col-span-2 lg:col-span-2 lg:row-span-2">
+      <a class="prod-link block group" data-wa-msg="col.p1.t">
+        <div class="prod-media h-[460px] sm:h-[560px] lg:h-[760px]">
+          <img src="images/collection-1-collar.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°01</p>
+          <h3 class="font-serif text-3xl text-ink mb-1" data-i18n="col.p1.t">Hilal Kolye</h3>
+          <p class="prod-cat" data-i18n="col.p1.c">Tören Kolyesi · 22K</p>
+          <span class="link-gold mt-4 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+    <!-- Card 2 -->
+    <article class="card-prod">
+      <a class="prod-link block group" data-wa-msg="col.p2.t">
+        <div class="prod-media h-[360px]">
+          <img src="images/collection-2-solitaire.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°02</p>
+          <h3 class="font-serif text-2xl text-ink mb-1" data-i18n="col.p2.t">Solitaire İstanbul</h3>
+          <p class="prod-cat" data-i18n="col.p2.c">Pırlanta Yüzük · 18K</p>
+          <span class="link-gold mt-3 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+    <!-- Card 3 -->
+    <article class="card-prod">
+      <a class="prod-link block group" data-wa-msg="col.p3.t">
+        <div class="prod-media h-[360px]">
+          <img src="images/collection-3-bracelet.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°03</p>
+          <h3 class="font-serif text-2xl text-ink mb-1" data-i18n="col.p3.t">Sarmaş Bilezik</h3>
+          <p class="prod-cat" data-i18n="col.p3.c">El Örme Bilezik · 22K</p>
+          <span class="link-gold mt-3 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+    <!-- Card 4 -->
+    <article class="card-prod">
+      <a class="prod-link block group" data-wa-msg="col.p4.t">
+        <div class="prod-media h-[360px]">
+          <img src="images/collection-4-pendant.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°04</p>
+          <h3 class="font-serif text-2xl text-ink mb-1" data-i18n="col.p4.t">Mermer Kolye</h3>
+          <p class="prod-cat" data-i18n="col.p4.c">Halka Kolye · 18K</p>
+          <span class="link-gold mt-3 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+    <!-- Card 5 -->
+    <article class="card-prod">
+      <a class="prod-link block group" data-wa-msg="col.p5.t">
+        <div class="prod-media h-[360px]">
+          <img src="images/collection-5-band.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°05</p>
+          <h3 class="font-serif text-2xl text-ink mb-1" data-i18n="col.p5.t">Klasik Alyans</h3>
+          <p class="prod-cat" data-i18n="col.p5.c">Çift Alyans · 14K</p>
+          <span class="link-gold mt-3 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+    <!-- Card 6 -->
+    <article class="card-prod">
+      <a class="prod-link block group" data-wa-msg="col.p6.t">
+        <div class="prod-media h-[360px]">
+          <img src="images/collection-6-diamond.png" alt="" loading="lazy"
+               class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+          <div class="prod-shimmer"></div>
+        </div>
+        <div class="prod-body">
+          <p class="prod-num">N°06</p>
+          <h3 class="font-serif text-2xl text-ink mb-1" data-i18n="col.p6.t">Sertifikalı Pırlanta</h3>
+          <p class="prod-cat" data-i18n="col.p6.c">Tek Taş · Talebe Özel</p>
+          <span class="link-gold mt-3 inline-block" data-i18n="col.ask">WhatsApp ile sor →</span>
+        </div>
+      </a>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============== STORY (craftsmanship) ============== -->
+<section id="story" class="relative">
+  <!-- Forge sparks background -->
+  <img src="images/craft-forge.png" alt=""
+       class="absolute inset-0 w-full h-full object-cover opacity-25"
+       loading="lazy">
+  <div class="absolute inset-0 bg-gradient-to-r from-onyx via-onyx/95 to-onyx/70"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-onyx via-transparent to-onyx"></div>
+
+  <div class="relative max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <div class="relative aspect-[4/5] max-h-[640px]">
+      <div class="absolute -top-5 -right-5 w-3/5 h-1/2 border border-gold/40 pointer-events-none"></div>
+      <div class="absolute -bottom-5 -left-5 w-3/5 h-1/2 border border-gold/40 pointer-events-none"></div>
+      <img src="images/craft-hands.png" alt=""
+           class="w-full h-full object-cover relative z-[1]"
+           loading="lazy">
+      <div class="absolute inset-0 z-[2] story-shimmer"></div>
+    </div>
+
+    <div>
+      <span class="rule"></span>
+      <p class="kicker mb-4" data-i18n="story.kicker">Bizim Hikâyemiz</p>
+      <h2 class="display display-md mb-7" data-i18n="story.title">Üç kuşak. <em>Tek bir tutku.</em></h2>
+      <p class="text-ink-2 text-base leading-relaxed mb-5" data-i18n="story.p1">
+        Dedem Mehmet Usta'nın 1978'de Kapalıçarşı'nın daracık bir köşesinde
+        açtığı atölye, bugün babamın ve benim ellerimde nefes almaya devam ediyor.
+      </p>
+      <p class="text-ink-2 text-base leading-relaxed mb-9" data-i18n="story.p2">
+        Bizim için her parça bir hatıradır: bir nişan, bir doğum,
+        bir veda. Altını işlerken aslında bir anı işliyoruz.
+      </p>
+      <div class="flex flex-wrap gap-10 mb-10">
+        <div class="flex flex-col gap-1">
+          <strong class="font-serif text-4xl text-gold leading-none">47</strong>
+          <span class="text-xs tracking-[.18em] uppercase text-ink-3" data-i18n="story.s1">Yıllık Tecrübe</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <strong class="font-serif text-4xl text-gold leading-none">2.4K+</strong>
+          <span class="text-xs tracking-[.18em] uppercase text-ink-3" data-i18n="story.s2">Mutlu Müşteri</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <strong class="font-serif text-4xl text-gold leading-none">22K</strong>
+          <span class="text-xs tracking-[.18em] uppercase text-ink-3" data-i18n="story.s3">Saf Altın</span>
+        </div>
+      </div>
+      <a class="btn btn-ghost-gold" href="#contact" data-i18n="story.cta">Atölyemizi Ziyaret Edin</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== CUSTOM ORDERS ============== -->
+<section id="custom" class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-32">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-16">
+    <div class="order-2 lg:order-1">
+      <span class="rule"></span>
+      <p class="kicker mb-4" data-i18n="cus.kicker">Özel Sipariş</p>
+      <h2 class="display display-md mb-7" data-i18n="cus.title">
+        Hayalinizdeki parçayı <em>birlikte</em> doğuralım.
+      </h2>
+      <p class="text-ink-3 max-w-md mb-2" data-i18n="cus.lede">
+        Bir taslak, bir kelime, hatta bir duygu — hepsi bir başlangıç.
+        Süreç dört kısa adımdan oluşur.
+      </p>
+    </div>
+    <div class="order-1 lg:order-2 grid grid-cols-2 gap-4">
+      <img src="images/bespoke-sketches.png" alt=""
+           class="w-full aspect-[4/5] object-cover col-span-1" loading="lazy">
+      <img src="images/lifestyle-band.png" alt=""
+           class="w-full aspect-[4/5] object-cover col-span-1 mt-10" loading="lazy">
+    </div>
+  </div>
+
+  <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-line">
+    <li class="step-li p-10 lg:border-r border-line">
+      <span class="step-num">01</span>
+      <h3 class="font-serif text-xl text-ink mb-2" data-i18n="cus.s1.t">Görüşme</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="cus.s1.b">Atölyede ya da WhatsApp üzerinden — tarz, bütçe, anlam üzerine konuşuruz.</p>
+    </li>
+    <li class="step-li p-10 lg:border-r border-line">
+      <span class="step-num">02</span>
+      <h3 class="font-serif text-xl text-ink mb-2" data-i18n="cus.s2.t">Tasarım</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="cus.s2.b">El çizimi ve 3D render. Onayınız olmadan tek bir adım atmıyoruz.</p>
+    </li>
+    <li class="step-li p-10 lg:border-r border-line">
+      <span class="step-num">03</span>
+      <h3 class="font-serif text-xl text-ink mb-2" data-i18n="cus.s3.t">Üretim</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="cus.s3.b">Sadece sizin parçanız üzerinde çalışan ustalarımız tarafından.</p>
+    </li>
+    <li class="step-li p-10">
+      <span class="step-num">04</span>
+      <h3 class="font-serif text-xl text-ink mb-2" data-i18n="cus.s4.t">Teslim</h3>
+      <p class="text-sm text-ink-3 leading-relaxed" data-i18n="cus.s4.b">Sertifika, kadife kutu ve ömür boyu bakım sözüyle elinize ulaşır.</p>
+    </li>
+  </ol>
+
+  <div class="flex flex-wrap items-center justify-center gap-6 mt-14 text-center">
+    <a class="btn btn-gold" id="waCustom" href="#" data-i18n="cus.cta">WhatsApp'tan Tasarım Talebi</a>
+    <span class="text-ink-3 text-sm" data-i18n="cus.note">Yanıt süresi: ortalama 30 dakika · 09:00–20:00</span>
+  </div>
+</section>
+
+<!-- ============== TRUST GRID (boutique / service / packaging) ============== -->
+<section class="bg-onyx-2 border-y border-line">
+  <div class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-28">
+    <header class="text-center max-w-xl mx-auto mb-14">
+      <span class="rule mx-auto"></span>
+      <p class="kicker mb-4" data-i18n="trust.kicker">Atölye Deneyimi</p>
+      <h2 class="display display-md" data-i18n="trust.title">
+        İlk adımdan <em>son</em> kutu kapağına.
+      </h2>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
+      <figure class="trust-card group">
+        <div class="overflow-hidden">
+          <img src="images/trust-boutique.png" alt=""
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+        </div>
+        <figcaption class="trust-cap">
+          <strong class="font-serif text-xl text-ink" data-i18n="trust.c1.t">Atölye</strong>
+          <p class="text-sm text-ink-3" data-i18n="trust.c1.b">Kapalıçarşı'nın kalbinde, randevu ile ziyaret.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="trust-card group">
+        <div class="overflow-hidden">
+          <img src="images/trust-service.png" alt=""
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+        </div>
+        <figcaption class="trust-cap">
+          <strong class="font-serif text-xl text-ink" data-i18n="trust.c2.t">Birebir Danışma</strong>
+          <p class="text-sm text-ink-3" data-i18n="trust.c2.b">Acelesiz seçim, samimi rehberlik.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="trust-card group">
+        <div class="overflow-hidden">
+          <img src="images/trust-packaging.png" alt=""
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+        </div>
+        <figcaption class="trust-cap">
+          <strong class="font-serif text-xl text-ink" data-i18n="trust.c3.t">İmzalı Kutu</strong>
+          <p class="text-sm text-ink-3" data-i18n="trust.c3.b">Her parça, marka kutusunda ve sertifikalı.</p>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============== GALLERY ============== -->
+<section id="gallery" class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-28">
+  <header class="max-w-xl mb-12">
+    <span class="rule"></span>
+    <p class="kicker mb-4" data-i18n="gal.kicker">Galeri</p>
+    <h2 class="display display-md" data-i18n="gal.title">Atölyeden Kareler</h2>
+  </header>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
+    <figure class="tile aspect-square md:row-span-2 md:aspect-auto">
+      <img src="images/gallery-1.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square">
+      <img src="images/lifestyle-earring.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square">
+      <img src="images/gallery-2.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square md:col-span-2">
+      <img src="images/gallery-3.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square">
+      <img src="images/lifestyle-band.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square">
+      <img src="images/collection-3-bracelet.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+    <figure class="tile aspect-square">
+      <img src="images/collection-6-diamond.png" alt="" loading="lazy" class="tile-img">
+    </figure>
+  </div>
+
+  <p class="text-ink-3 text-sm mt-8 text-center">
+    <span data-i18n="gal.cap">Daha fazlası için</span>
+    <a href="https://instagram.com/" target="_blank" rel="noopener" class="link-gold ml-2">→ @altunatelier</a>
+  </p>
+</section>
+
+<!-- ============== EMOTIONAL BANNER (couple) ============== -->
+<section class="relative h-[80vh] min-h-[520px] flex items-center justify-center text-center overflow-hidden">
+  <img src="images/lifestyle-couple.png" alt=""
+       class="absolute inset-0 w-full h-full object-cover" loading="lazy">
+  <div class="absolute inset-0 bg-gradient-to-b from-onyx/70 via-onyx/40 to-onyx/90"></div>
+  <blockquote class="relative z-10 max-w-3xl px-6">
+    <p class="font-serif italic text-2xl sm:text-3xl lg:text-4xl text-ink leading-snug mb-6" data-i18n="quote.body">
+      "Nişan yüzüğümüzü Altun Atelier'de yaptırdık. Beklediğimizden çok daha
+      özel bir parça oldu — sanki yıllardır bekliyormuş gibi."
+    </p>
+    <footer class="flex flex-col items-center gap-1">
+      <strong class="font-serif text-lg text-gold-hi">Elif &amp; Burak</strong>
+      <span class="text-xs tracking-[.22em] uppercase text-ink-3" data-i18n="quote.who">Müşteri · İstanbul</span>
+    </footer>
+  </blockquote>
+</section>
+
+<!-- ============== CONTACT ============== -->
+<section id="contact" class="max-w-[1200px] mx-auto px-5 sm:px-10 lg:px-16 py-24 lg:py-32">
+  <header class="max-w-xl mb-14">
+    <span class="rule"></span>
+    <p class="kicker mb-4" data-i18n="con.kicker">İletişim</p>
+    <h2 class="display display-md mb-4" data-i18n="con.title">Sizinle <em>tanışmak</em> isteriz.</h2>
+    <p class="text-ink-3" data-i18n="con.lede">Atölyemiz randevu ile çalışır. Size en uygun yolu seçin.</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-line mb-14">
+    <a class="channel channel-wa" id="waMain" href="#">
+      <span class="channel-ico" aria-hidden="true">💬</span>
+      <strong class="font-serif text-xl text-ink">WhatsApp</strong>
+      <span class="text-sm text-ink-2" data-i18n="con.wa">+90 5XX XXX XX XX</span>
+      <em class="channel-note" data-i18n="con.waNote">Anında yanıt · 09:00–20:00</em>
+    </a>
+    <a class="channel" href="tel:+905000000000">
+      <span class="channel-ico" aria-hidden="true">☎</span>
+      <strong class="font-serif text-xl text-ink" data-i18n="con.tel">Telefon</strong>
+      <span class="text-sm text-ink-2">+90 212 XXX XX XX</span>
+      <em class="channel-note" data-i18n="con.telNote">Pzt–Cmt · 10:00–19:00</em>
+    </a>
+    <a class="channel" href="https://instagram.com/" target="_blank" rel="noopener">
+      <span class="channel-ico" aria-hidden="true">◐</span>
+      <strong class="font-serif text-xl text-ink">Instagram</strong>
+      <span class="text-sm text-ink-2">@altunatelier</span>
+      <em class="channel-note" data-i18n="con.igNote">Yeni parçalar günlük</em>
+    </a>
+    <a class="channel" href="https://maps.google.com" target="_blank" rel="noopener">
+      <span class="channel-ico" aria-hidden="true">⌖</span>
+      <strong class="font-serif text-xl text-ink" data-i18n="con.loc">Atölye</strong>
+      <span class="text-sm text-ink-2" data-i18n="con.addr">Kapalıçarşı, Kalpakçılar Cd. No:XX</span>
+      <em class="channel-note">Fatih, İstanbul</em>
+    </a>
+  </div>
+
+  <form class="bg-onyx-3 border border-line p-8 lg:p-12 grid gap-6" id="contactForm" novalidate>
+    <h3 class="font-serif text-2xl text-ink" data-i18n="form.title">Ya da kısa bir not bırakın</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <label class="flex flex-col gap-2">
+        <span class="form-lbl" data-i18n="form.name">İsim</span>
+        <input name="name" required class="form-input">
+      </label>
+      <label class="flex flex-col gap-2">
+        <span class="form-lbl" data-i18n="form.phone">Telefon / WhatsApp</span>
+        <input name="phone" inputmode="tel" required class="form-input">
+      </label>
+    </div>
+    <label class="flex flex-col gap-2">
+      <span class="form-lbl" data-i18n="form.interest">İlgilendiğiniz</span>
+      <select name="interest" class="form-input">
+        <option data-i18n="form.i1">Özel Tasarım</option>
+        <option data-i18n="form.i2">Nişan / Alyans</option>
+        <option data-i18n="form.i3">Koleksiyondan Bir Parça</option>
+        <option data-i18n="form.i4">Bakım / Onarım</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-2">
+      <span class="form-lbl" data-i18n="form.msg">Notunuz</span>
+      <textarea name="message" rows="4" class="form-input resize-y"></textarea>
+    </label>
+    <button type="submit" class="btn btn-gold justify-self-start" data-i18n="form.send">WhatsApp'tan Gönder</button>
+    <p class="text-xs text-ink-3" data-i18n="form.note">Form gönderildiğinde bilgileriniz WhatsApp üzerinden bize iletilir.</p>
+  </form>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="bg-onyx-2 border-t border-line">
+  <div class="max-w-[1400px] mx-auto px-5 sm:px-10 lg:px-16 pt-20 pb-8">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-10 pb-10 border-b border-line">
+      <div class="flex flex-col gap-3 items-start">
+        <div class="flex items-center gap-3">
+          <span class="brand-mark">A</span>
+          <span class="brand-word font-serif text-lg tracking-[.32em]">ALTUN<em class="not-italic text-gold text-[.7em] tracking-[.18em] ml-1 italic">atelier</em></span>
+        </div>
+        <p class="text-xs text-ink-3 tracking-wider" data-i18n="foot.tag">El yapımı altın mücevher · İstanbul · 1978</p>
+      </div>
+      <nav class="flex flex-wrap gap-x-8 gap-y-3" aria-label="Footer">
+        <a href="#collections" class="nav-a" data-i18n="nav.collections">Koleksiyonlar</a>
+        <a href="#story"       class="nav-a" data-i18n="nav.story">Hikâye</a>
+        <a href="#custom"      class="nav-a" data-i18n="nav.custom">Özel Sipariş</a>
+        <a href="#contact"     class="nav-a" data-i18n="nav.contact">İletişim</a>
+      </nav>
+    </div>
+    <div class="mt-7 flex flex-wrap justify-between gap-3 text-[.7rem] tracking-[.18em] uppercase text-ink-4">
+      <span>© <span id="year"></span> Altun Atelier</span>
+      <span data-i18n="foot.legal">Her parça benzersizdir · KVKK uyumlu</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating WhatsApp -->
+<a class="fab" id="fabWa" href="#" aria-label="WhatsApp">
+  <svg viewBox="0 0 32 32" class="w-7 h-7"><path fill="currentColor" d="M16 3C9 3 3 9 3 16c0 2.6.8 5 2.2 7L3 29l6.2-2c2 1.1 4.3 1.7 6.8 1.7 7 0 13-6 13-13S23 3 16 3zm0 23c-2.1 0-4-.5-5.7-1.5l-.4-.2-3.7 1.2 1.2-3.6-.3-.4A10.6 10.6 0 0 1 5 16c0-6 5-11 11-11s11 5 11 11-5 10-11 10zm5.9-7.6c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7 0c-1.5-.7-2.5-1.3-3.5-3-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 3 1.2 3.2c.2.2 2.1 3.2 5.1 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.3z"/></svg>
+</a>
+
+<!-- WebGL slider deps — loaded synchronously so they're ready when script.js runs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/imagesloaded/4.1.4/imagesloaded.pkgd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
