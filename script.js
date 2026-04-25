@@ -482,3 +482,45 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
 }else{
   window.addEventListener('load', bootHeroSlider);
 }
+
+/* ===================== INTRO OVERLAY ===================== */
+// Choreographed splash: ~3.5s reveal, then fade-out (.85s).
+// Click / keypress / Enter button dismiss early.
+// Body scroll is locked while visible so the hero canvas can't grab gestures.
+(function bootIntro(){
+  const intro = document.getElementById('intro');
+  if(!intro) return;
+
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let dismissed = false;
+
+  document.body.style.overflow = 'hidden';
+
+  const dismiss = ()=>{
+    if(dismissed) return;
+    dismissed = true;
+    intro.classList.add('is-leaving');
+    document.body.style.overflow = '';
+    // Match CSS animation duration; remove from DOM so it can't trap focus / pointer.
+    setTimeout(()=>{ intro.remove(); }, 900);
+  };
+
+  // Skip button
+  const skipBtn = intro.querySelector('.intro-skip');
+  if(skipBtn) skipBtn.addEventListener('click', e=>{ e.stopPropagation(); dismiss(); });
+
+  // Click anywhere on the overlay
+  intro.addEventListener('click', dismiss);
+
+  // Any key dismisses (Enter/Space/Esc all welcome)
+  const onKey = ()=>{ dismiss(); document.removeEventListener('keydown', onKey); };
+  document.addEventListener('keydown', onKey);
+
+  // Auto-dismiss after the choreography completes (or instantly if reduced-motion)
+  if(REDUCED){
+    // Show a single static beat, then leave
+    setTimeout(dismiss, 600);
+  }else{
+    setTimeout(dismiss, 3700);
+  }
+})();
