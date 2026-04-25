@@ -483,44 +483,166 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   window.addEventListener('load', bootHeroSlider);
 }
 
-/* ===================== INTRO OVERLAY ===================== */
-// Choreographed splash: ~3.5s reveal, then fade-out (.85s).
-// Click / keypress / Enter button dismiss early.
-// Body scroll is locked while visible so the hero canvas can't grab gestures.
+/* ===================== INTRO OVERLAY (WebGL gold raymarcher) ===================== */
+// Backdrop: a morphing box↔octahedron raymarcher (after Matthias Hurrle / @atzedent),
+// re-skinned via luminance->palette mapping to render gold-on-cream instead of orange-on-black.
+// Choreography: shader + wordmark reveal ~3.5s, then fade-out (.85s).
+// Click / key / Enter dismiss early. Body scroll-lock prevents hero canvas grabbing gestures.
 (function bootIntro(){
   const intro = document.getElementById('intro');
   if(!intro) return;
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let dismissed = false;
+  let rafId = 0;
 
   document.body.style.overflow = 'hidden';
 
+  // ----- WebGL setup (skipped under reduced-motion or if context unavailable) -----
+  const canvas = document.getElementById('intro-canvas');
+  const gl = canvas && !REDUCED ? canvas.getContext('webgl2') : null;
+  let glProgram = null, uTime = null, uRes = null;
+
+  if(gl){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    const vs = `#version 300 es
+      in vec2 position;
+      void main(){ gl_Position = vec4(position, 0., 1.); }`;
+
+    // Original raymarcher, with the final fragColor remapped from luminance into a
+    // cream → mid-gold → champagne palette so the geometry reads as molten gold on cream.
+    const fs = `#version 300 es
+      precision highp float;
+      out vec4 fragColor;
+      uniform vec2 resolution;
+      uniform float time;
+      #define T time
+      #define S smoothstep
+
+      mat3 rotY(float a){ float c=cos(a),s=sin(a); return mat3(vec3(c,0,s),vec3(0,1,0),vec3(-s,0,c)); }
+      float smin(float a,float b,float k){ float h=clamp(.5+.5*(b-a)/k,.0,1.); return mix(b,a,h)-k*h*(1.-h); }
+      float box(vec3 p,vec3 s,float r){ p=abs(p)-s; return length(max(vec3(0),p))+min(max(max(p.x,p.y),p.z),.0)-r; }
+      float oct(vec3 p,float s){ p=abs(p); return (p.x+p.y+p.z-s)*(1./sqrt(3.)); }
+      float rnd(float a){ return fract(sin(a*711.599)*756.839); }
+      float curve(float a,float b){ a/=b; return mix(rnd(floor(a)),rnd(floor(a)+1.),pow(S(.0,1.,fract(a)),10.)); }
+      float tick(float t,float e){ return floor(t)+pow(S(.0,1.,fract(t)),e); }
+      float map(vec3 p){ return smin(box(p,vec3(1),.125), oct(p, 1.8+.25*sin(curve(T,.5))), .125); }
+      vec3 dir(vec2 uv,vec3 ro,vec3 target,float zoom){
+        vec3 up=vec3(0,1,0), f=normalize(target-ro), r=normalize(cross(up,f)), u=cross(f,r);
+        return normalize(f*zoom + uv.x*r + uv.y*u);
+      }
+      vec3 norm(vec3 p){
+        vec2 e=vec2(1e-3,0); float d=map(p);
+        return normalize(d - vec3(map(p-e.xyy), map(p-e.yxy), map(p-e.yyx)));
+      }
+
+      void main(){
+        vec2 uv = (gl_FragCoord.xy - .5*resolution.xy) / min(resolution.x, resolution.y);
+        vec3 col = vec3(0);
+        vec3 ro = vec3(0, 2.*sin(T*.5)*curve(T*.2,.2), -4);
+        ro *= rotY(acos(0.)*sin(tick(T,4.))*(-1.+2.*curve(10.*sin(T)*curve(rnd(uv.y/uv.x)*5.*sin(T),5.),4.)));
+
+        vec3 rd = dir(uv, ro, vec3(0), 1.);
+        vec3 p = ro;
+        float i = .0, side = 1., at = .0;
+        for(; i<50.; i++){
+          float d = map(p)*side;
+          if(d < 1e-2){
+            vec3 n = norm(p)*side;
+            vec3 l = normalize(ro - vec3(sin(T), cos(T), 0));
+            vec3 r = reflect(rd, n);
+            if(dot(l,n) < .0) l = -l;
+            vec3 h = normalize(l - r);
+            float fres = pow(1.-max(.0, dot(-r, n)), 5.);
+            float diff = pow(max(.0, dot(l, n)), 4.);
+            float fog  = S(.2, .8, i/80.);
+            col += fog + mix(vec3(1,.5+.5*sin(tick(T,5.)),0), vec3(1,1,0), fog*fres)
+                        * diff * fres * (.8*pow(max(.0,dot(h,n)),12.) + .6*pow(max(.0,dot(r,n)),28.));
+            side = -side;
+            vec3 rdo = refract(rd, n, 1.+.45*side);
+            if(dot(rdo,rdo) == .0) rdo = reflect(r, n);
+            rd = rdo;
+            d = 2e-1;
+          }
+          if(d > 20.) break;
+          p += rd*d;
+          at += .01*(.01/d);
+        }
+        col += pow(S(.0,1.,at), 3.);
+        col += S(.5, .85, max(.01, i/80.));
+
+        // ---- Re-skin: luminance → cream / mid-gold / champagne ----
+        float lum = clamp(dot(col, vec3(.299,.587,.114)), 0., 1.);
+        vec3 cream     = vec3(0.985, 0.952, 0.860);
+        vec3 midGold   = vec3(0.780, 0.560, 0.180);
+        vec3 deepGold  = vec3(0.420, 0.280, 0.060);
+        vec3 champagne = vec3(1.000, 0.910, 0.600);
+
+        vec3 c = mix(cream,    midGold,   S(0.00, 0.35, lum));
+              c = mix(c,       deepGold,  S(0.20, 0.55, lum));
+              c = mix(c,       champagne, S(0.65, 1.00, lum));
+
+        fragColor = vec4(c, 1.);
+      }`;
+
+    const compile = (type, src)=>{
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src); gl.compileShader(sh);
+      if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+      return sh;
+    };
+
+    glProgram = gl.createProgram();
+    gl.attachShader(glProgram, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(glProgram, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(glProgram);
+
+    const verts = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(glProgram, 'position');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    uTime = gl.getUniformLocation(glProgram, 'time');
+    uRes  = gl.getUniformLocation(glProgram, 'resolution');
+
+    const resize = ()=>{
+      const w = window.innerWidth, h = window.innerHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const start = performance.now();
+    const tick = (now)=>{
+      if(dismissed) return;
+      gl.useProgram(glProgram);
+      gl.uniform1f(uTime, (now - start) * 0.001);
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // ----- Dismiss flow -----
   const dismiss = ()=>{
     if(dismissed) return;
     dismissed = true;
+    cancelAnimationFrame(rafId);
     intro.classList.add('is-leaving');
     document.body.style.overflow = '';
-    // Match CSS animation duration; remove from DOM so it can't trap focus / pointer.
     setTimeout(()=>{ intro.remove(); }, 900);
   };
 
-  // Skip button
   const skipBtn = intro.querySelector('.intro-skip');
   if(skipBtn) skipBtn.addEventListener('click', e=>{ e.stopPropagation(); dismiss(); });
-
-  // Click anywhere on the overlay
   intro.addEventListener('click', dismiss);
-
-  // Any key dismisses (Enter/Space/Esc all welcome)
   const onKey = ()=>{ dismiss(); document.removeEventListener('keydown', onKey); };
   document.addEventListener('keydown', onKey);
 
-  // Auto-dismiss after the choreography completes (or instantly if reduced-motion)
-  if(REDUCED){
-    // Show a single static beat, then leave
-    setTimeout(dismiss, 600);
-  }else{
-    setTimeout(dismiss, 3700);
-  }
+  setTimeout(dismiss, REDUCED ? 600 : 3700);
 })();
