@@ -2,11 +2,8 @@
    ALTUN ATELIER — interactions
    - Bilingual TR/EN
    - Sticky nav, mobile menu
-   - WhatsApp deep-links (per product, custom, FAB, form)
    - Reveal-on-scroll
 ============================================================ */
-
-const WHATSAPP_NUMBER = '905000000000'; // TODO: replace, no '+' or spaces
 
 /* ---------- i18n ---------- */
 const i18n = {
@@ -61,8 +58,7 @@ const i18n = {
     "cus.s2.t":"Tasarım","cus.s2.b":"El çizimi ve 3D render. Onayınız olmadan tek bir adım atmıyoruz.",
     "cus.s3.t":"Üretim","cus.s3.b":"Sadece sizin parçanız üzerinde çalışan ustalarımız tarafından.",
     "cus.s4.t":"Teslim","cus.s4.b":"Sertifika, kadife kutu ve ömür boyu bakım sözüyle elinize ulaşır.",
-    "cus.cta":"WhatsApp'tan Tasarım Talebi",
-    "cus.note":"Yanıt süresi: ortalama 30 dakika · 09:00–20:00",
+    "cus.cta":"Tasarım Talebi Gönderin",
 
     "trust.kicker":"Atölye Deneyimi","trust.title":"İlk adımdan <em>son</em> kutu kapağına.",
     "trust.c1.t":"Atölye","trust.c1.b":"Kapalıçarşı'nın kalbinde, randevu ile ziyaret.",
@@ -77,18 +73,15 @@ const i18n = {
 
     "con.kicker":"İletişim","con.title":"Sizinle <em>tanışmak</em> isteriz.",
     "con.lede":"Atölyemiz randevu ile çalışır. Size en uygun yolu seçin.",
-    "con.wa":"+90 5XX XXX XX XX","con.waNote":"Anında yanıt · 09:00–20:00",
-    "con.tel":"Telefon","con.telNote":"Pzt–Cmt · 10:00–19:00",
     "con.igNote":"Yeni parçalar günlük",
     "con.loc":"Atölye","con.addr":"Kapalıçarşı, Kalpakçılar Cd. No:XX",
 
     "form.title":"Ya da kısa bir not bırakın",
-    "form.name":"İsim","form.phone":"Telefon / WhatsApp","form.interest":"İlgilendiğiniz",
+    "form.name":"İsim","form.email":"E-posta","form.interest":"İlgilendiğiniz",
     "form.i1":"Özel Tasarım","form.i2":"Nişan / Alyans",
     "form.i3":"Koleksiyondan Bir Parça","form.i4":"Bakım / Onarım",
-    "form.msg":"Notunuz","form.send":"Gönder","form.sendWa":"WhatsApp ile gönder",
-    "form.email":"E-posta",
-    "form.note":"Mesajınız e-posta ile bize ulaşır. WhatsApp düğmesi formu önceden doldurarak WhatsApp'ı açar.",
+    "form.msg":"Notunuz","form.send":"Gönder",
+    "form.note":"Mesajınız e-posta ile bize ulaşır.",
 
     "foot.tag":"El yapımı altın mücevher · İstanbul · 1978",
     "foot.legal":"Her parça benzersizdir · KVKK uyumlu",
@@ -142,12 +135,11 @@ const i18n = {
 
     "cus.kicker":"Bespoke","cus.title":"Let's bring your vision to life — <em>together</em>.",
     "cus.lede":"A sketch, a word, even a feeling — anything is a beginning. The process takes four short steps.",
-    "cus.s1.t":"Conversation","cus.s1.b":"At the atelier or on WhatsApp — style, budget, meaning.",
+    "cus.s1.t":"Conversation","cus.s1.b":"At the atelier or by email — style, budget, meaning.",
     "cus.s2.t":"Design","cus.s2.b":"Hand drawing and 3D render. We don't move forward without your approval.",
     "cus.s3.t":"Crafting","cus.s3.b":"By master goldsmiths working only on your piece.",
     "cus.s4.t":"Delivery","cus.s4.b":"Certificate, velvet box, and a lifetime of care.",
-    "cus.cta":"Start a Bespoke Conversation",
-    "cus.note":"Average response: 30 minutes · 9 am – 8 pm",
+    "cus.cta":"Send a Bespoke Request",
 
     "trust.kicker":"The Atelier Experience","trust.title":"From first step to <em>final</em> velvet box.",
     "trust.c1.t":"The Atelier","trust.c1.b":"In the heart of the Grand Bazaar — by appointment.",
@@ -162,18 +154,15 @@ const i18n = {
 
     "con.kicker":"Contact","con.title":"We'd love to <em>meet</em> you.",
     "con.lede":"The atelier is by appointment. Choose the way that suits you best.",
-    "con.wa":"+90 5XX XXX XX XX","con.waNote":"Instant reply · 9 am – 8 pm",
-    "con.tel":"Phone","con.telNote":"Mon–Sat · 10 am – 7 pm",
     "con.igNote":"New pieces, daily",
     "con.loc":"Atelier","con.addr":"Grand Bazaar, Kalpakçılar St. No:XX",
 
     "form.title":"Or leave us a short note",
-    "form.name":"Name","form.phone":"Phone / WhatsApp","form.interest":"I'm interested in",
+    "form.name":"Name","form.email":"Email","form.interest":"I'm interested in",
     "form.i1":"Bespoke Design","form.i2":"Engagement / Wedding",
     "form.i3":"A Piece from the Collection","form.i4":"Repair / Restoration",
-    "form.msg":"Your note","form.send":"Send","form.sendWa":"Send via WhatsApp",
-    "form.email":"Email",
-    "form.note":"Your message reaches us by email. The WhatsApp button opens a pre-filled chat instead.",
+    "form.msg":"Your note","form.send":"Send",
+    "form.note":"Your message reaches us by email.",
 
     "foot.tag":"Handcrafted gold jewelry · Istanbul · 1978",
     "foot.legal":"Each piece is unique · GDPR / KVKK compliant",
@@ -199,41 +188,10 @@ function setLang(lang){
     b.setAttribute('aria-pressed', active);
   });
   try{ localStorage.setItem(langKey, lang); }catch{}
-  rewireWhatsApp(lang);
 }
 document.querySelectorAll('.lang-btn').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
 });
-
-/* ---------- WHATSAPP DEEP LINKS ---------- */
-function waLink(text){
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
-}
-function rewireWhatsApp(lang){
-  const dict = i18n[lang] || i18n.tr;
-  const greet = lang === 'en'
-    ? "Hello Altun Atelier, I'd like to ask about: "
-    : "Merhaba Altun Atelier, sormak istediğim: ";
-
-  document.getElementById('fabWa').href    = waLink(greet);
-  document.getElementById('waMain').href   = waLink(greet);
-  document.getElementById('waCustom').href = waLink(
-    lang === 'en'
-      ? "Hello, I'd like to start a bespoke piece. Here's what I have in mind: "
-      : "Merhaba, özel bir tasarım için görüşmek istiyorum. Aklımdaki şu: "
-  );
-
-  document.querySelectorAll('[data-wa-msg]').forEach(a=>{
-    const titleKey = a.dataset.waMsg;
-    const title = dict[titleKey] || '';
-    const msg = lang === 'en'
-      ? `Hello, I'd like more information about "${title}".`
-      : `Merhaba, "${title}" parçası hakkında bilgi almak istiyorum.`;
-    a.href = waLink(msg);
-    a.target = '_blank';
-    a.rel = 'noopener';
-  });
-}
 
 /* ---------- NAV STICKY ---------- */
 const nav = document.getElementById('nav');
@@ -260,34 +218,12 @@ const io = new IntersectionObserver((entries)=>{
 },{threshold:.1, rootMargin:'0px 0px -6% 0px'});
 revealEls.forEach(el => io.observe(el));
 
-/* ---------- FORM → EMAIL (Web3Forms) + WhatsApp fallback ---------- */
-// Primary: POST to Web3Forms which forwards to the registered inbox.
-// Fallback: "WhatsApp ile gönder" button opens wa.me with the same text
-//           pre-filled — useful if email submission fails or user prefers chat.
+/* ---------- FORM → EMAIL (Web3Forms) ---------- */
 (function bootContactForm(){
   const form = document.getElementById('contactForm');
   if(!form) return;
 
   const status = document.getElementById('formStatus');
-  const waBtn  = document.getElementById('formWaBtn');
-
-  // Build a pretty plain-text body from current form values
-  const buildText = ()=>{
-    const lang = document.documentElement.lang || 'tr';
-    const labels = lang === 'en'
-      ? {n:'Name', e:'Email', p:'Phone', i:'Interest', m:'Message',
-         open:"Hello Altun Atelier, here's my inquiry:"}
-      : {n:'İsim', e:'E-posta', p:'Telefon', i:'İlgi alanı', m:'Mesaj',
-         open:'Merhaba Altun Atelier, talebim:'};
-    const f = form;
-    return `${labels.open}
-
-${labels.n}: ${f.name.value}
-${labels.e}: ${f.email?.value || '—'}
-${labels.p}: ${f.phone.value || '—'}
-${labels.i}: ${f.interest.value}
-${labels.m}: ${f.message.value}`;
-  };
 
   const setStatus = (kind, msg)=>{
     if(!status) return;
@@ -296,26 +232,14 @@ ${labels.m}: ${f.message.value}`;
     status.textContent = msg;
   };
 
-  // ---- Email submission via Web3Forms ----
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const lang = document.documentElement.lang || 'tr';
-
-    // Refuse to call the API if the user hasn't filled in their access key yet
-    const accessKey = form.querySelector('[name="access_key"]')?.value || '';
-    if(!accessKey || accessKey === 'YOUR_ACCESS_KEY_HERE'){
-      setStatus('err', lang === 'en'
-        ? 'Email service not configured yet — using WhatsApp instead.'
-        : 'E-posta hizmeti henüz ayarlanmadı — WhatsApp ile gönderiliyor.');
-      window.open(waLink(buildText()), '_blank');
-      return;
-    }
 
     setStatus('ok', lang === 'en' ? 'Sending…' : 'Gönderiliyor…');
 
     try{
       const data = new FormData(form);
-      data.append('message_full', buildText()); // human-readable body for the inbox
       const res = await fetch('https://api.web3forms.com/submit', {
         method:'POST',
         body:data,
@@ -332,15 +256,9 @@ ${labels.m}: ${f.message.value}`;
       }
     } catch(err){
       setStatus('err', lang === 'en'
-        ? 'Could not send — please try WhatsApp below.'
-        : 'Gönderilemedi — lütfen aşağıdan WhatsApp\'ı deneyin.');
+        ? 'Could not send — please try again or email us directly.'
+        : 'Gönderilemedi — lütfen tekrar deneyin veya bize doğrudan e-posta gönderin.');
     }
-  });
-
-  // ---- Manual WhatsApp button (always available as fallback) ----
-  waBtn?.addEventListener('click', ()=>{
-    if(!form.reportValidity()) return; // browser native validation hint
-    window.open(waLink(buildText()), '_blank');
   });
 })();
 
