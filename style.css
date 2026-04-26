@@ -575,24 +575,59 @@ body{font-feature-settings:"kern","liga"}
 /* Hero canvas: never block touch-scroll on mobile */
 #hero-slider canvas{touch-action:none}
 
-/* ===================== GLOBAL GOLD-RAYMARCHER BACKDROP ===================== */
-/* Sits behind everything (z:0) but above body's bg-onyx fallback. Sections in
-   normal flow paint above it; transparent sections let the gold show through. */
-#bg-canvas{
+/* ===================== KINTSUGI BACKDROP (cream + gold cracks) ===================== */
+/* Cream-white field with fixed SVG gold-vein decoration. Implies that the
+   white surface has been broken and rejoined with gold (kintsugi 金継ぎ). */
+html{ background-color:#fdfaf2 }              /* warm cream fallback */
+body{ background-color:transparent !important } /* let kintsugi show through */
+#kintsugi-bg{
   position:fixed; inset:0;
-  width:100%; height:100%;
-  z-index:-1;            /* sits behind in-flow sections */
+  z-index:-1;
   pointer-events:none;
-  display:block;
-  opacity:0;
-  transition:opacity 1.4s ease-out;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse 110% 80% at 50% 40%, #ffffff 0%, #fbf6e8 60%, #f3e9cd 100%);
 }
-#bg-canvas.is-ready{ opacity:.9 }
-/* Body must NOT create a stacking context that traps z:-1 behind itself.
-   bg-onyx is opaque — replace with transparent so the gold shows through. */
-body{ background-color:transparent !important }
-/* HTML root keeps the dark fallback for any negative-z bleed beyond viewport */
-html{ background-color:#0b0b0c }
+#kintsugi-bg svg{
+  width:100%; height:100%;
+  display:block;
+  opacity:.72;          /* gold veins present but never compete with content */
+}
+
+/* ---- Light-section text overrides ---- */
+/* These sections (and their children) sit transparently over the kintsugi cream
+   so their original light-on-dark text would vanish. Force a dark palette here. */
+#promise, #collections, #custom, #gallery, #contact{
+  color:#1a1408;
+}
+#promise .display, #collections .display, #custom .display, #gallery .display, #contact .display,
+#promise h1, #promise h2, #promise h3,
+#collections h1, #collections h2, #collections h3,
+#custom h1, #custom h2, #custom h3,
+#gallery h1, #gallery h2, #gallery h3,
+#contact h1, #contact h2, #contact h3{
+  color:#1a1408;
+}
+#promise .text-ink, #collections .text-ink, #custom .text-ink, #gallery .text-ink, #contact .text-ink{
+  color:#1a1408;
+}
+#promise .text-ink-2, #collections .text-ink-2, #custom .text-ink-2, #gallery .text-ink-2, #contact .text-ink-2{
+  color:#3b2807;
+}
+#promise .text-ink-3, #collections .text-ink-3, #custom .text-ink-3, #gallery .text-ink-3, #contact .text-ink-3{
+  color:#6b4a14;
+}
+/* Kicker / rule lines: gold tint pops on cream */
+#promise .kicker, #collections .kicker, #custom .kicker, #gallery .kicker, #contact .kicker{
+  color:#a8801f;
+}
+#promise .rule, #collections .rule, #custom .rule, #gallery .rule, #contact .rule{
+  background:linear-gradient(90deg, #a8801f, transparent);
+}
+/* Italic emphasis still gold */
+#promise em, #collections em, #custom em, #gallery em, #contact em{
+  color:#a8801f;
+}
 
 /* ===================== INTRO OVERLAY (white + gold splash) ===================== */
 #intro{

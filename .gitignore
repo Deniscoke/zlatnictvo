@@ -13,6 +13,9 @@ desktop.ini
 # Vercel local state
 .vercel/
 
+# Claude Code personal settings (auto-push hook etc.)
+.claude/settings.local.json
+
 # Logs
 *.log
 npm-debug.log*
