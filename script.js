@@ -474,34 +474,55 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
 /* ===================== INTRO OVERLAY (Kintsugi marble) ===================== */
 // "The Mending" — pure CSS+SVG choreography. Marble field fades in, gold seam
 // network draws across via SVG stroke-dashoffset, then ALTUN reveals.
-// ~4.7s total + .85s fade-out. Click / key / Enter dismiss early.
+// ~4.7s total + .85s fade-out. Tap / click / key dismiss early.
 (function bootIntro(){
   const intro = document.getElementById('intro');
   if(!intro) return;
 
-  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let dismissed = false;
+  const REDUCED  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  let dismissed  = false;
 
-  document.body.style.overflow = 'hidden';
+  // Lock scroll — iOS needs position:fixed on body (overflow:hidden alone won't do it).
+  // Preserve scroll offset so the page doesn't jump when the lock lifts.
+  const scrollY = window.scrollY;
+  document.body.style.top = `-${scrollY}px`;
+  document.body.classList.add('intro-open');
 
   // ----- Dismiss flow -----
   const dismiss = ()=>{
     if(dismissed) return;
     dismissed = true;
     intro.classList.add('is-leaving');
-    document.body.style.overflow = '';
+    const savedY = Math.abs(parseInt(document.body.style.top || '0', 10));
+    document.body.classList.remove('intro-open');
+    document.body.style.top = '';
+    window.scrollTo(0, savedY);
     setTimeout(()=>{ intro.remove(); }, 900);
   };
 
+  // Skip button — listen on both click AND touchend (touchend fires before click on iOS)
   const skipBtn = intro.querySelector('.intro-skip');
-  if(skipBtn) skipBtn.addEventListener('click', e=>{ e.stopPropagation(); dismiss(); });
+  if(skipBtn){
+    skipBtn.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); dismiss(); }, {passive:false});
+    skipBtn.addEventListener('click',    e=>{ e.stopPropagation(); dismiss(); });
+  }
+
+  // Overlay tap/click — iOS needs touchend OR cursor:pointer on the element (see CSS)
+  let touchMoved = false;
+  intro.addEventListener('touchstart', ()=>{ touchMoved = false; }, {passive:true});
+  intro.addEventListener('touchmove',  ()=>{ touchMoved = true;  }, {passive:true});
+  intro.addEventListener('touchend',   e=>{
+    if(!touchMoved){ e.preventDefault(); dismiss(); }
+  }, {passive:false});
   intro.addEventListener('click', dismiss);
+
+  // Keyboard
   const onKey = ()=>{ dismiss(); document.removeEventListener('keydown', onKey); };
   document.addEventListener('keydown', onKey);
 
-  // Choreography lasts ~4.7s (marble fade + 3 crack stages + wordmark + tagline)
-  // — auto-dismiss at 5.0s. Reduced-motion: instant dismiss after a brief beat.
-  setTimeout(dismiss, REDUCED ? 600 : 5000);
+  // Auto-dismiss: shorter on touch devices (animation simplified in CSS anyway)
+  setTimeout(dismiss, REDUCED ? 600 : IS_TOUCH ? 4000 : 5000);
 })();
 
 /* ===================== LIGHTBOX (product viewer) ===================== */

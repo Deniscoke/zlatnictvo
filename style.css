@@ -13,6 +13,8 @@
 
 html{scroll-behavior:smooth}
 body{font-feature-settings:"kern","liga"}
+/* Intro scroll-lock (replaces overflow:hidden which doesn't work on iOS) */
+body.intro-open{ overflow:hidden; position:fixed; width:100%; }
 
 /* Film grain */
 .grain{
@@ -639,6 +641,8 @@ body{ background-color:transparent !important }
   display:flex; align-items:center; justify-content:center;
   background:#fdfaf2;       /* cream fallback before marble div paints */
   overflow:hidden;
+  cursor:pointer;            /* required for iOS Safari to fire click on a div */
+  -webkit-tap-highlight-color:transparent;
   animation:intro-fade-in .9s cubic-bezier(.22,.61,.36,1) both;
 }
 
@@ -841,6 +845,76 @@ body{ background-color:transparent !important }
 /* Mobile: tighten skip placement */
 @media (max-width: 640px){
   .intro-skip{bottom:18px; right:18px; padding:8px 12px; font-size:10px}
+}
+
+/* ===================== INTRO — TOUCH/MOBILE OPTIMISATION =====================
+   On coarse-pointer (phones, tablets) we:
+   1. Kill the feTurbulence overlay (most expensive GPU op on mobile)
+   2. Remove drop-shadow filters from SVG paths (compositor layer cost)
+   3. Shorten animation delays so the whole show fits in ~3.5s
+   4. Make skip button appear sooner and be bigger (44px tap target)
+   5. Add a "tap to enter" hint below ALTUN for discoverability
+=============================================================================*/
+@media (hover: none) and (pointer: coarse){
+
+  /* Strip expensive fractal-noise texture — invisible on small screens anyway */
+  .intro-marble::before{ display:none }
+
+  /* Remove glow/drop-shadow from crack paths — huge GPU saving */
+  .intro-cracks .ks-path{ filter:none !important }
+  .intro-cracks .ks-flake{ filter:none !important }
+
+  /* Speed up crack animation stages */
+  .ks-p1{ animation-duration:1.0s; animation-delay:0.20s }
+  .ks-p2{ animation-duration:0.7s; animation-delay:0.80s }
+  .ks-p3{ animation-duration:0.8s; animation-delay:0.90s }
+  .ks-p4{ animation-duration:0.7s; animation-delay:1.00s }
+  .ks-p5{ animation-duration:0.8s; animation-delay:1.30s }
+  .ks-p6{ animation-duration:0.8s; animation-delay:1.40s }
+  .ks-p7{ animation-duration:0.7s; animation-delay:1.50s }
+
+  /* Flake delays shifted to match faster cracks */
+  .ks-f1{ animation-delay:1.10s }
+  .ks-f2{ animation-delay:1.30s }
+  .ks-f3{ animation-delay:1.50s }
+  .ks-f4{ animation-delay:1.70s }
+  .ks-f5{ animation-delay:1.90s }
+  .ks-f6{ animation-delay:2.05s }
+
+  /* ALTUN letters appear sooner */
+  .intro-word span{
+    animation-delay: calc(1.8s + var(--i) * .07s);
+  }
+  .intro-sub{ animation-delay:2.3s }
+  .intro-tag-row{ animation-delay:2.55s }
+
+  /* Skip button appears much sooner and bigger (44px touch target) */
+  .intro-skip{
+    animation-delay:2.0s;
+    padding:12px 20px;
+    font-size:11px;
+    bottom:env(safe-area-inset-bottom, 24px);
+    bottom: max(24px, env(safe-area-inset-bottom));
+    right:20px;
+  }
+
+  /* Tap-anywhere hint — visible on mobile below the wordmark */
+  .intro-tag-row::after{
+    content:"tap anywhere to enter";
+    display:block;
+    position:absolute;
+    bottom:-2.4rem;
+    left:50%; transform:translateX(-50%);
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:rgba(107,74,20,.55);
+    white-space:nowrap;
+    opacity:0;
+    animation:intro-fade-up .6s 2.7s ease-out both;
+  }
+  .intro-tag-row{ position:relative }
 }
 
 /* ===================== LIGHTBOX (product viewer) ===================== */
