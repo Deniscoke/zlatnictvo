@@ -26,8 +26,8 @@ const i18n = {
 
     "slides.0.title":"Bir el. Bir kalp.<br><em>Bir ömür</em> ışıltı.",
     "slides.0.meta":"İmza Koleksiyonu",
-    "slides.1.title":"Geleneğin <em>en zarif</em> hali.",
-    "slides.1.meta":"Hilal Kolye · Tören Koleksiyonu",
+    "slides.1.title":"Altının <em>doğduğu</em> yer.",
+    "slides.1.meta":"Atölyemiz · 1978",
     "slides.2.title":"Fabrika değil. <em>Atölye.</em>",
     "slides.2.meta":"El Yapımı · 22 Ayar",
     "slides.3.title":"Anılarınız <em>altın</em> olur.",
@@ -110,8 +110,8 @@ const i18n = {
 
     "slides.0.title":"One hand. One heart.<br>A <em>lifetime</em> of light.",
     "slides.0.meta":"Signature Collection",
-    "slides.1.title":"Tradition, at its <em>most refined</em>.",
-    "slides.1.meta":"Crescent Necklace · Ceremonial",
+    "slides.1.title":"Where gold is <em>born</em>.",
+    "slides.1.meta":"Our Atelier · 1978",
     "slides.2.title":"Not a factory. <em>An atelier.</em>",
     "slides.2.meta":"Made by Hand · 22K",
     "slides.3.title":"Your moments, in <em>gold</em>.",
