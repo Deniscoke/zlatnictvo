@@ -575,6 +575,22 @@ body{font-feature-settings:"kern","liga"}
 /* Hero canvas: never block touch-scroll on mobile */
 #hero-slider canvas{touch-action:none}
 
+/* ===================== NAV TRANSITION (gold displacement wipe) ===================== */
+#nav-transition{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  z-index:150;             /* above page, below intro overlay (200) and nav (50) */
+  pointer-events:none;
+  display:block;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .25s ease, visibility .25s;
+}
+#nav-transition.is-running{
+  opacity:1;
+  visibility:visible;
+}
+
 /* ===================== KINTSUGI BACKDROP (cream + gold cracks) ===================== */
 /* Cream-white field with fixed SVG gold-vein decoration. Implies that the
    white surface has been broken and rejoined with gold (kintsugi 金継ぎ). */

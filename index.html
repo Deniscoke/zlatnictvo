@@ -47,6 +47,12 @@
 
 <body class="bg-onyx text-ink-2 font-sans antialiased overflow-x-hidden">
 
+<!-- ============== NAV TRANSITION (WebGL displacement gold-wipe) ============== -->
+<!-- Fullscreen canvas; shows for ~1s when a nav link is clicked, runs the
+     same displacement shader as webgl-distortion-slider between two procedural
+     gold textures so the section change feels like a luxury wipe. -->
+<canvas id="nav-transition" aria-hidden="true"></canvas>
+
 <!-- ============== KINTSUGI BACKDROP (cream + gold cracks) ============== -->
 <!-- Fixed full-page SVG: organic gold veins implying that the white field has
      been broken and rejoined with gold. Echoes the kintsugi (金継ぎ) repair art. -->

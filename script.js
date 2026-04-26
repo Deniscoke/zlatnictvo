@@ -744,3 +744,205 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   }, {passive:true});
 })();
 
+/* ===================== NAV TRANSITION (gold displacement wipe) ===================== */
+// Click any in-page nav link → fullscreen displacement shader runs between two
+// procedural gold textures while the page smooth-scrolls underneath. Same
+// shader formula as the webgl-distortion-slider source, just with synthetic
+// canvas2d textures instead of photo files.
+(function bootNavTransition(){
+  const canvas = document.getElementById('nav-transition');
+  if(!canvas || typeof THREE === 'undefined') return;
+
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const links = Array.from(document.querySelectorAll('a[href^="#"]'))
+    .filter(a => {
+      const id = a.getAttribute('href').slice(1);
+      return id && document.getElementById(id);
+    });
+  if(!links.length) return;
+
+  // ----- Procedural gold textures (4 patterns, picked in pairs per click) -----
+  // Generated once on the main thread (cheap canvas2d) so transitions are
+  // instant; no per-click texture work.
+  const makeTexture = (drawFn)=>{
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const ctx = c.getContext('2d');
+    drawFn(ctx, 512);
+    const tex = new THREE.Texture(c);
+    tex.minFilter = tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  };
+
+  const palette = {
+    onyx:'#0f0f10', deepGold:'#6b4a14', midGold:'#a8801f',
+    champagne:'#d4af54', cream:'#fdfaf2'
+  };
+
+  const patterns = [
+    // 1 — radial gold (champagne center → onyx edges)
+    (ctx, s)=>{
+      const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s*0.7);
+      g.addColorStop(0, palette.champagne);
+      g.addColorStop(0.4, palette.midGold);
+      g.addColorStop(1, palette.onyx);
+      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
+    },
+    // 2 — diagonal gold sweep
+    (ctx, s)=>{
+      const g = ctx.createLinearGradient(0,0,s,s);
+      g.addColorStop(0, palette.onyx);
+      g.addColorStop(0.45, palette.deepGold);
+      g.addColorStop(0.55, palette.champagne);
+      g.addColorStop(1, palette.onyx);
+      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
+    },
+    // 3 — vertical kintsugi-vein wash
+    (ctx, s)=>{
+      const g = ctx.createLinearGradient(0,0,0,s);
+      g.addColorStop(0, palette.onyx);
+      g.addColorStop(0.5, palette.midGold);
+      g.addColorStop(1, palette.deepGold);
+      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
+      // Add a few bright gold streaks for displacement variation
+      ctx.strokeStyle = palette.champagne;
+      ctx.lineWidth = 6; ctx.globalAlpha = .6;
+      for(let i=0; i<5; i++){
+        ctx.beginPath();
+        ctx.moveTo(Math.random()*s, 0);
+        ctx.bezierCurveTo(Math.random()*s, s*0.3, Math.random()*s, s*0.7, Math.random()*s, s);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    },
+    // 4 — molten gold field (cream → champagne → mid)
+    (ctx, s)=>{
+      const g = ctx.createRadialGradient(s*0.3, s*0.3, 0, s*0.5, s*0.5, s);
+      g.addColorStop(0, palette.cream);
+      g.addColorStop(0.5, palette.champagne);
+      g.addColorStop(1, palette.deepGold);
+      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
+    },
+  ];
+
+  const textures = patterns.map(p => makeTexture(p));
+
+  // ----- Three.js setup (orthographic, full-bleed plane) -----
+  let renderer, scene, camera, mesh, mat;
+  const initThree = ()=>{
+    renderer = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true });
+    renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+    sizeRenderer();
+
+    scene = new THREE.Scene();
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    camera.position.z = 1;
+
+    mat = new THREE.ShaderMaterial({
+      uniforms: {
+        dispFactor:   { value: 0.0 },
+        currentImage: { value: textures[0] },
+        nextImage:    { value: textures[1] },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+      `,
+      // Same displacement formula as the webgl-distortion-slider source
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform sampler2D currentImage;
+        uniform sampler2D nextImage;
+        uniform float dispFactor;
+        void main(){
+          vec2 uv = vUv;
+          float intensity = 0.35;
+          vec4 orig1 = texture2D(currentImage, uv);
+          vec4 orig2 = texture2D(nextImage, uv);
+          vec4 cur  = texture2D(currentImage, vec2(uv.x, uv.y + dispFactor * (orig2.r * intensity)));
+          vec4 nxt  = texture2D(nextImage,    vec2(uv.x, uv.y + (1.0 - dispFactor) * (orig1.r * intensity)));
+          gl_FragColor = mix(cur, nxt, dispFactor);
+        }
+      `,
+      transparent: true,
+    });
+
+    mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), mat);
+    scene.add(mesh);
+  };
+
+  const sizeRenderer = ()=>{
+    if(!renderer) return;
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+  };
+  window.addEventListener('resize', sizeRenderer);
+
+  // ----- Transition runner -----
+  let running = false;
+
+  const runTransition = (targetEl)=>{
+    if(running) return;
+    running = true;
+
+    if(!renderer) initThree();
+
+    // Pick two distinct random patterns
+    const a = Math.floor(Math.random() * textures.length);
+    let b = Math.floor(Math.random() * textures.length);
+    if(b === a) b = (b + 1) % textures.length;
+    mat.uniforms.currentImage.value = textures[a];
+    mat.uniforms.nextImage.value    = textures[b];
+    mat.uniforms.dispFactor.value   = 0;
+
+    canvas.classList.add('is-running');
+
+    // Smooth-scroll the page underneath while the wipe covers the viewport
+    targetEl.scrollIntoView({ behavior:'smooth', block:'start' });
+
+    // Tween dispFactor 0 → 1 over 750ms with easeInOutExpo
+    const dur = 750;
+    const start = performance.now();
+    const easeInOutExpo = t => t === 0 ? 0 : t === 1 ? 1
+      : t < 0.5 ? Math.pow(2, 20*t - 10) / 2
+      :          (2 - Math.pow(2, -20*t + 10)) / 2;
+
+    const tick = (now)=>{
+      const t = Math.min(1, (now - start) / dur);
+      mat.uniforms.dispFactor.value = easeInOutExpo(t);
+      renderer.render(scene, camera);
+      if(t < 1){
+        requestAnimationFrame(tick);
+      } else {
+        // Hold one frame at full state, then fade out the canvas
+        setTimeout(()=>{
+          canvas.classList.remove('is-running');
+          // CSS opacity transition is .25s — release lock just after
+          setTimeout(()=>{ running = false; }, 260);
+        }, 80);
+      }
+    };
+    requestAnimationFrame(tick);
+  };
+
+  // ----- Wire nav links -----
+  links.forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if(!target) return;
+      // Skip transition for reduced-motion or while another wipe is running
+      if(REDUCED){
+        // Native smooth-scroll, no shader
+        e.preventDefault();
+        target.scrollIntoView({ behavior:'smooth', block:'start' });
+        return;
+      }
+      e.preventDefault();
+      // Close mobile menu if open (nav burger logic toggles .menu-open)
+      document.getElementById('nav')?.classList.remove('menu-open');
+      runTransition(target);
+    });
+  });
+})();
+
