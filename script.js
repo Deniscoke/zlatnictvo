@@ -40,8 +40,8 @@ const i18n = {
     "promise.c4.t":"Ömür Boyu","promise.c4.b":"Bakım, cilalama, ölçü değişimi. Aldığınız parça yıllarca ilk günkü gibi kalır.",
 
     "col.kicker":"Koleksiyonlar","col.title":"İmza Parçalar",
-    "col.lede":"Beğendiğiniz parça için WhatsApp üzerinden bilgi alabilirsiniz.",
-    "col.ask":"WhatsApp ile sor →",
+    "col.lede":"Beğendiğiniz parçaya tıklayın — detayları büyütülmüş olarak inceleyin.",
+    "col.ask":"Detayları Gör →",
     "col.p1.t":"Hilal Kolye","col.p1.c":"Tören Kolyesi · 22K",
     "col.p2.t":"Solitaire İstanbul","col.p2.c":"Pırlanta Yüzük · 18K",
     "col.p3.t":"Sarmaş Bilezik","col.p3.c":"El Örme Bilezik · 22K",
@@ -91,6 +91,7 @@ const i18n = {
 
     "foot.tag":"El yapımı altın mücevher · İstanbul · 1978",
     "foot.legal":"Her parça benzersizdir · KVKK uyumlu",
+    "lb.cta":"Randevu Al →",
   },
 
   en: {
@@ -123,8 +124,8 @@ const i18n = {
     "promise.c4.t":"Forever","promise.c4.b":"Polishing, resizing, restoration. As it was the day you received it.",
 
     "col.kicker":"Collections","col.title":"Signature Pieces",
-    "col.lede":"Found one you love? Ask us about it on WhatsApp.",
-    "col.ask":"Ask on WhatsApp →",
+    "col.lede":"Click any piece to see it larger and explore details.",
+    "col.ask":"View details →",
     "col.p1.t":"Crescent Necklace","col.p1.c":"Ceremonial Necklace · 22K",
     "col.p2.t":"Solitaire Istanbul","col.p2.c":"Diamond Ring · 18K",
     "col.p3.t":"Sarmaş Bracelet","col.p3.c":"Hand-woven Bracelet · 22K",
@@ -174,6 +175,7 @@ const i18n = {
 
     "foot.tag":"Handcrafted gold jewelry · Istanbul · 1978",
     "foot.legal":"Each piece is unique · GDPR / KVKK compliant",
+    "lb.cta":"Book a Visit →",
   }
 };
 
@@ -645,5 +647,100 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   document.addEventListener('keydown', onKey);
 
   setTimeout(dismiss, REDUCED ? 600 : 3700);
+})();
+
+/* ===================== LIGHTBOX (product viewer) ===================== */
+// Replaces the old WhatsApp redirect on product cards with an in-place zoom
+// viewer. Click any product → fullscreen overlay with the photo, title, and
+// a soft "Book a Visit" CTA. Arrow keys / swipe / nav buttons cycle through
+// the collection. Esc / close button / backdrop click closes.
+(function bootLightbox(){
+  const lb = document.getElementById('lightbox');
+  if(!lb) return;
+
+  const cards = Array.from(document.querySelectorAll('[data-lightbox]'));
+  if(!cards.length) return;
+
+  const imgEl   = lb.querySelector('.lb-img');
+  const numEl   = lb.querySelector('.lb-num');
+  const titleEl = lb.querySelector('.lb-title');
+  const catEl   = lb.querySelector('.lb-cat');
+  const closeBtn = lb.querySelector('.lb-close');
+  const prevBtn  = lb.querySelector('.lb-prev');
+  const nextBtn  = lb.querySelector('.lb-next');
+
+  let currentIdx = 0;
+
+  const render = (idx)=>{
+    currentIdx = (idx + cards.length) % cards.length;
+    const card = cards[currentIdx];
+    const lang = document.documentElement.lang || 'tr';
+    const dict = (typeof i18n !== 'undefined' && i18n[lang]) || {};
+
+    imgEl.classList.remove('is-loaded');
+    imgEl.src = card.dataset.img || '';
+    imgEl.alt = dict[card.dataset.i18nTitle] || '';
+    imgEl.onload = ()=> imgEl.classList.add('is-loaded');
+
+    numEl.textContent   = `N°${String(currentIdx + 1).padStart(2,'0')}`;
+    titleEl.textContent = dict[card.dataset.i18nTitle] || '';
+    catEl.textContent   = dict[card.dataset.i18nCat]   || '';
+  };
+
+  const open = (idx)=>{
+    render(idx);
+    lb.hidden = false;
+    // next frame so the [hidden]→display:flex transition can animate
+    requestAnimationFrame(()=> lb.classList.add('is-open'));
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const close = ()=>{
+    lb.classList.remove('is-open');
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(()=>{ lb.hidden = true; imgEl.src = ''; }, 350);
+  };
+
+  const next = ()=> render(currentIdx + 1);
+  const prev = ()=> render(currentIdx - 1);
+
+  // Wire product cards
+  cards.forEach((card, i)=>{
+    card.addEventListener('click', e=>{
+      e.preventDefault();
+      open(i);
+    });
+  });
+
+  // Controls
+  closeBtn.addEventListener('click', close);
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  // Backdrop click (but not stage clicks)
+  lb.addEventListener('click', e=>{
+    if(e.target === lb) close();
+  });
+
+  // CTA scrolls to contact and closes
+  lb.querySelector('.lb-cta')?.addEventListener('click', ()=> close());
+
+  // Keyboard
+  document.addEventListener('keydown', e=>{
+    if(lb.hidden) return;
+    if(e.key === 'Escape') close();
+    else if(e.key === 'ArrowRight') next();
+    else if(e.key === 'ArrowLeft')  prev();
+  });
+
+  // Touch swipe
+  let tsX = 0;
+  lb.addEventListener('touchstart', e=>{ tsX = e.touches[0].clientX; }, {passive:true});
+  lb.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - tsX;
+    if(Math.abs(dx) > 50) (dx < 0 ? next : prev)();
+  }, {passive:true});
 })();
 
