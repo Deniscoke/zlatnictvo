@@ -1026,3 +1026,24 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   });
 })();
 
+/* ==================== PARALLAX BACKGROUND ==================== */
+(function(){
+  const bg = document.getElementById('parallax-bg');
+  if(!bg) return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let ticking = false;
+
+  function update(){
+    bg.style.transform = 'translateY(' + (window.scrollY * 0.22) + 'px)';
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function(){
+    if(!ticking){
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+

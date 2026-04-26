@@ -591,23 +591,31 @@ body{font-feature-settings:"kern","liga"}
   visibility:visible;
 }
 
-/* ===================== KINTSUGI BACKDROP (cream + gold cracks) ===================== */
-/* Cream-white field with fixed SVG gold-vein decoration. Implies that the
-   white surface has been broken and rejoined with gold (kintsugi 金継ぎ). */
-html{ background-color:#fdfaf2 }              /* warm cream fallback */
-body{ background-color:transparent !important } /* let kintsugi show through */
+/* ===================== KINTSUGI BACKDROP (marble photo + gold cracks) ===================== */
+html{ background-color:#fdfaf2 }
+body{ background-color:transparent !important }
 #kintsugi-bg{
   position:fixed; inset:0;
   z-index:-1;
   pointer-events:none;
   overflow:hidden;
-  background:
-    radial-gradient(ellipse 110% 80% at 50% 40%, #ffffff 0%, #fbf6e8 60%, #f3e9cd 100%);
+}
+#parallax-bg{
+  position:absolute;
+  width:100%;
+  height:130%;       /* 30% extra height = room to travel downward on scroll */
+  object-fit:cover;
+  object-position:center top;
+  top:0; left:0;
+  will-change:transform;
+  user-select:none;
+  pointer-events:none;
 }
 #kintsugi-bg svg{
+  position:absolute; inset:0;
   width:100%; height:100%;
   display:block;
-  opacity:.72;          /* gold veins present but never compete with content */
+  opacity:.55;       /* gold veins sit on top of photo */
 }
 
 /* ---- Light-section text overrides ---- */
