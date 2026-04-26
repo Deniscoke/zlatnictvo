@@ -512,120 +512,86 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
       in vec2 position;
       void main(){ gl_Position = vec4(position, 0., 1.); }`;
 
-    // Molten-gold orb raymarcher. Sphere SDF + multi-octave fbm noise
-    // displacement → soft wobbling blob (no crystalline facets). Single-bounce
-    // hit with wrap-diffuse + rim + fresnel for premium liquid-metal look.
+    // Gold-dust cosmos: pure 2D shader, no raymarcher. Multi-layer cell-based
+    // star-field gives drifting gold particles with depth parallax. Thin
+    // sin-wave filaments cross the field for "gold thread in void" elegance.
     const fs = `#version 300 es
       precision highp float;
       out vec4 fragColor;
       uniform vec2 resolution;
       uniform float time;
-      #define T (time*0.6)
+      #define T (time*0.35)
 
-      mat3 rotY(float a){ float c=cos(a),s=sin(a); return mat3(vec3(c,0,s),vec3(0,1,0),vec3(-s,0,c)); }
-      mat3 rotX(float a){ float c=cos(a),s=sin(a); return mat3(vec3(1,0,0),vec3(0,c,-s),vec3(0,s,c)); }
-
-      vec3 hash3(vec3 p){
-        p = vec3(dot(p, vec3(127.1,311.7, 74.7)),
-                 dot(p, vec3(269.5,183.3,246.1)),
-                 dot(p, vec3(113.5,271.9,124.6)));
-        return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+      vec2 hash2(vec2 p){
+        p = vec2(dot(p, vec2(127.1, 311.7)),
+                 dot(p, vec2(269.5, 183.3)));
+        return fract(sin(p) * 43758.5453);
       }
 
-      // Smooth value-noise (Perlin-style)
-      float noise(vec3 p){
-        vec3 i = floor(p);
-        vec3 f = fract(p);
-        vec3 u = f*f*(3.0 - 2.0*f);
-        return mix(mix(mix(dot(hash3(i+vec3(0,0,0)), f-vec3(0,0,0)),
-                           dot(hash3(i+vec3(1,0,0)), f-vec3(1,0,0)), u.x),
-                       mix(dot(hash3(i+vec3(0,1,0)), f-vec3(0,1,0)),
-                           dot(hash3(i+vec3(1,1,0)), f-vec3(1,1,0)), u.x), u.y),
-                   mix(mix(dot(hash3(i+vec3(0,0,1)), f-vec3(0,0,1)),
-                           dot(hash3(i+vec3(1,0,1)), f-vec3(1,0,1)), u.x),
-                       mix(dot(hash3(i+vec3(0,1,1)), f-vec3(0,1,1)),
-                           dot(hash3(i+vec3(1,1,1)), f-vec3(1,1,1)), u.x), u.y), u.z);
+      // One layer of drifting gold dust. Each cell of an N×N grid holds one
+      // particle whose brightness/size comes from its hash, so most are dim
+      // and a few are bright (natural star distribution).
+      float dust(vec2 uv, float scale, float radius){
+        vec2 g  = uv * scale;
+        vec2 c  = floor(g);
+        vec2 f  = fract(g) - 0.5;
+        vec2 h  = hash2(c);
+        // Slow drift per-cell with phase from hash
+        vec2 drift = vec2(
+          sin(T + h.x * 6.2831) * 0.18,
+          cos(T * 0.83 + h.y * 6.2831) * 0.18
+        );
+        vec2 pos = (h - 0.5) * 0.7 + drift;
+        float d  = length(f - pos);
+        // Power weighting: most particles dim, rare bright sparks
+        float bright  = pow(h.x * h.y, 3.5);
+        // Twinkle modulation
+        float twinkle = 0.6 + 0.4 * sin(T * 1.7 + (h.x + h.y) * 12.0);
+        return smoothstep(radius * (0.4 + bright), 0.0, d) * bright * twinkle;
       }
 
-      // Fractal Brownian Motion — 4 octaves, layered noise
-      float fbm(vec3 p){
-        float v = 0.0; float a = 0.5;
-        for(int k=0; k<4; k++){ v += a*noise(p); p *= 2.02; a *= 0.5; }
-        return v;
-      }
-
-      // Sphere with breathing radius + flowing noise displacement
-      float map(vec3 p){
-        p *= rotY(T*0.20) * rotX(sin(T*0.25)*0.35);
-        float r = 1.18 + 0.04*sin(T*0.7);
-        float n = fbm(p*1.4 + vec3(T*0.10, -T*0.07, T*0.09));
-        return length(p) - r - n*0.28;
-      }
-
-      vec3 calcNormal(vec3 p){
-        vec2 e = vec2(0.0009, 0);
-        return normalize(vec3(
-          map(p+e.xyy) - map(p-e.xyy),
-          map(p+e.yxy) - map(p-e.yxy),
-          map(p+e.yyx) - map(p-e.yyx)
-        ));
+      // One thin sin-wave filament — like a gold thread floating across
+      float filament(vec2 uv, float yOff, float freq, float phase, float thick){
+        float y = sin(uv.x * freq + T * phase) * 0.22 + yOff;
+        // Soft falloff envelope so threads fade at screen edges
+        float env = smoothstep(1.05, 0.4, abs(uv.x));
+        return smoothstep(thick, 0.0, abs(uv.y - y)) * env;
       }
 
       void main(){
-        vec2 uv = (gl_FragCoord.xy - 0.5*resolution.xy) / min(resolution.x, resolution.y);
+        // Normalize so y is -0.5..0.5, x scales with aspect
+        vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
-        vec3 ro = vec3(0.0, 0.0, -3.2);
-        vec3 rd = normalize(vec3(uv, 1.5));
+        // Background: very deep onyx with a faint warm bloom toward center
+        float bg = smoothstep(1.1, 0.0, length(uv * 1.3));
+        vec3 col = mix(vec3(0.006, 0.005, 0.004), vec3(0.045, 0.030, 0.012), bg);
 
-        // Background: deep onyx with faint warm radial bloom toward center
-        float bg = smoothstep(0.95, 0.0, length(uv));
-        vec3 col = mix(vec3(0.012,0.010,0.008), vec3(0.060,0.044,0.020), bg);
+        // Three dust layers at different scales for parallax depth
+        float dustSum = 0.0;
+        dustSum += dust(uv,                40.0, 0.025) * 0.55;  // distant fine
+        dustSum += dust(uv + vec2(13.7, 9.1), 22.0, 0.038) * 0.85;  // mid
+        dustSum += dust(uv + vec2(4.3, 21.6), 12.0, 0.060) * 1.30;  // close bright
 
-        // Raymarch — under-relaxed step (×0.85) for noise-displaced SDF stability
-        vec3 p = ro;
-        float t = 0.0;
-        bool hit = false;
-        for(int i=0; i<70; i++){
-          float d = map(p);
-          if(d < 0.001){ hit = true; break; }
-          if(t > 8.0) break;
-          p += rd*d*0.85;
-          t += d*0.85;
-        }
+        // A handful of delicate filaments, varied in frequency / phase / Y
+        float threadSum = 0.0;
+        threadSum += filament(uv,  0.18,  1.6,  0.40, 0.0035) * 0.55;
+        threadSum += filament(uv, -0.12,  2.3, -0.30, 0.0028) * 0.45;
+        threadSum += filament(uv,  0.32,  1.0,  0.55, 0.0042) * 0.40;
+        threadSum += filament(uv, -0.28,  1.9,  0.35, 0.0030) * 0.50;
+        threadSum += filament(uv,  0.05,  3.1, -0.45, 0.0022) * 0.35;
 
-        if(hit){
-          vec3 n = calcNormal(p);
+        // Gold + champagne tints
+        vec3 gold  = vec3(1.00, 0.78, 0.35);
+        vec3 champ = vec3(1.00, 0.92, 0.65);
 
-          // Two-light soft setup
-          vec3 lKey = normalize(vec3( 0.6,  0.8, -0.5));
-          vec3 lRim = normalize(vec3(-0.4, -0.2,  0.9));
+        col += gold  * dustSum;
+        col += champ * threadSum * 0.75;
 
-          float wrap = dot(n, lKey)*0.5 + 0.5;          // soft wrap-around diffuse
-          float diff = max(0.0, dot(n, lKey));
-          float fres = pow(1.0 - max(0.0, dot(-rd, n)), 3.0);
-          float rim  = pow(max(0.0, dot(n, lRim)), 2.0);
+        // Soft vignette
+        col *= 1.0 - 0.30 * pow(length(uv * 1.1), 1.8);
 
-          vec3 deep  = vec3(0.30, 0.18, 0.05);
-          vec3 mid   = vec3(0.78, 0.55, 0.16);
-          vec3 hot   = vec3(1.00, 0.82, 0.40);
-          vec3 champ = vec3(1.00, 0.92, 0.65);
-
-          vec3 surf = mix(deep, mid, wrap);
-          surf = mix(surf, hot,   diff*0.7);
-          surf += champ * fres * 0.55;
-          surf += champ * rim  * 0.45;
-
-          // Inner gold-pool glow (modulated by 3D noise) — gives molten depth
-          float pool = fbm(p*1.8 + vec3(T*0.05));
-          surf += mid * (pool*0.5 + 0.5) * 0.18;
-
-          col = surf;
-        }
-
-        // Vignette + soft Reinhard tonemap + slight gamma lift
-        col *= 1.0 - 0.45*pow(length(uv), 1.6);
-        col = col / (1.0 + col*0.6);
-        col = pow(col, vec3(0.95));
+        // Gentle gamma lift
+        col = pow(col, vec3(0.92));
 
         fragColor = vec4(col, 1.0);
       }`;
@@ -818,53 +784,125 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   };
 
   const palette = {
-    onyx:'#0f0f10', deepGold:'#6b4a14', midGold:'#a8801f',
-    champagne:'#d4af54', cream:'#fdfaf2'
+    onyx:'#0a0908', deepGold:'#6b4a14', midGold:'#a8801f',
+    champagne:'#d4af54', bright:'#f4e0a8'
+  };
+
+  // ---- Helpers for the four "delicate gold elements in space" patterns ----
+  const fillOnyx = (ctx, s)=>{ ctx.fillStyle = palette.onyx; ctx.fillRect(0,0,s,s); };
+  const seededRand = (seed)=>{
+    // Tiny LCG so each pattern is deterministic per page-load
+    let x = seed;
+    return ()=>{ x = (x*9301 + 49297) % 233280; return x/233280; };
   };
 
   const patterns = [
-    // 1 — radial gold (champagne center → onyx edges)
+    // 1 — Radial gold rays from center (thin filaments, dark void)
     (ctx, s)=>{
-      const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s*0.7);
-      g.addColorStop(0, palette.champagne);
-      g.addColorStop(0.4, palette.midGold);
-      g.addColorStop(1, palette.onyx);
-      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
-    },
-    // 2 — diagonal gold sweep
-    (ctx, s)=>{
-      const g = ctx.createLinearGradient(0,0,s,s);
-      g.addColorStop(0, palette.onyx);
-      g.addColorStop(0.45, palette.deepGold);
-      g.addColorStop(0.55, palette.champagne);
-      g.addColorStop(1, palette.onyx);
-      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
-    },
-    // 3 — vertical kintsugi-vein wash
-    (ctx, s)=>{
-      const g = ctx.createLinearGradient(0,0,0,s);
-      g.addColorStop(0, palette.onyx);
-      g.addColorStop(0.5, palette.midGold);
-      g.addColorStop(1, palette.deepGold);
-      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
-      // Add a few bright gold streaks for displacement variation
-      ctx.strokeStyle = palette.champagne;
-      ctx.lineWidth = 6; ctx.globalAlpha = .6;
-      for(let i=0; i<5; i++){
+      fillOnyx(ctx, s);
+      const cx = s/2, cy = s/2;
+      const rng = seededRand(11);
+      ctx.lineCap = 'round';
+      for(let i=0; i<48; i++){
+        const a = (i / 48) * Math.PI * 2 + rng()*0.04;
+        const len = s*0.42 * (0.4 + rng()*0.6);
+        const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(a)*len, cy + Math.sin(a)*len);
+        grad.addColorStop(0,   'rgba(244,224,168,0)');
+        grad.addColorStop(0.3, 'rgba(212,175,84,0.35)');
+        grad.addColorStop(1,   'rgba(168,128,31,0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = 0.8 + rng()*1.2;
         ctx.beginPath();
-        ctx.moveTo(Math.random()*s, 0);
-        ctx.bezierCurveTo(Math.random()*s, s*0.3, Math.random()*s, s*0.7, Math.random()*s, s);
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a)*len, cy + Math.sin(a)*len);
         ctx.stroke();
       }
-      ctx.globalAlpha = 1;
     },
-    // 4 — molten gold field (cream → champagne → mid)
+
+    // 2 — Diagonal gold filaments + dust particles
     (ctx, s)=>{
-      const g = ctx.createRadialGradient(s*0.3, s*0.3, 0, s*0.5, s*0.5, s);
-      g.addColorStop(0, palette.cream);
-      g.addColorStop(0.5, palette.champagne);
-      g.addColorStop(1, palette.deepGold);
-      ctx.fillStyle = g; ctx.fillRect(0,0,s,s);
+      fillOnyx(ctx, s);
+      const rng = seededRand(23);
+      // Thin diagonal threads
+      ctx.lineCap = 'round';
+      for(let i=0; i<14; i++){
+        const y0 = rng()*s;
+        const y1 = y0 + (rng()-0.5)*s*0.4;
+        const grad = ctx.createLinearGradient(0, y0, s, y1);
+        grad.addColorStop(0,   'rgba(212,175,84,0)');
+        grad.addColorStop(0.5, 'rgba(244,224,168,0.55)');
+        grad.addColorStop(1,   'rgba(212,175,84,0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = 0.6 + rng()*1.4;
+        ctx.beginPath();
+        ctx.moveTo(0, y0);
+        ctx.bezierCurveTo(s*0.33, y0 + (rng()-0.5)*30, s*0.66, y1 + (rng()-0.5)*30, s, y1);
+        ctx.stroke();
+      }
+      // Dust
+      for(let i=0; i<160; i++){
+        const r = rng()*1.4 + 0.3;
+        ctx.fillStyle = `rgba(244,224,168,${0.2 + rng()*0.5})`;
+        ctx.beginPath();
+        ctx.arc(rng()*s, rng()*s, r, 0, Math.PI*2);
+        ctx.fill();
+      }
+    },
+
+    // 3 — Crossed sin-wave filaments (kintsugi-inspired)
+    (ctx, s)=>{
+      fillOnyx(ctx, s);
+      const rng = seededRand(37);
+      ctx.lineCap = 'round';
+      for(let i=0; i<8; i++){
+        const yOff   = (i/7) * s;
+        const amp    = 20 + rng()*60;
+        const period = 1.5 + rng()*2.5;
+        const phase  = rng() * Math.PI * 2;
+        const grad = ctx.createLinearGradient(0, 0, s, 0);
+        grad.addColorStop(0,   'rgba(212,175,84,0)');
+        grad.addColorStop(0.5, `rgba(244,224,168,${0.35 + rng()*0.3})`);
+        grad.addColorStop(1,   'rgba(212,175,84,0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = 0.7 + rng()*1.0;
+        ctx.beginPath();
+        for(let x=0; x<=s; x+=4){
+          const y = yOff + Math.sin(x/s * Math.PI * 2 * period + phase) * amp;
+          if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      // Sparkle accents at filament intersections
+      for(let i=0; i<40; i++){
+        ctx.fillStyle = `rgba(253,250,242,${0.4 + rng()*0.5})`;
+        ctx.beginPath();
+        ctx.arc(rng()*s, rng()*s, 0.6 + rng()*1.0, 0, Math.PI*2);
+        ctx.fill();
+      }
+    },
+
+    // 4 — Pure gold dust field (constellation-like)
+    (ctx, s)=>{
+      fillOnyx(ctx, s);
+      const rng = seededRand(53);
+      // Very faint warm bloom in center
+      const bloom = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s*0.55);
+      bloom.addColorStop(0, 'rgba(168,128,31,0.18)');
+      bloom.addColorStop(1, 'rgba(168,128,31,0)');
+      ctx.fillStyle = bloom; ctx.fillRect(0,0,s,s);
+      // Three particle layers (faint big, mid, sharp tiny)
+      for(let layer=0; layer<3; layer++){
+        const count   = [60, 110, 220][layer];
+        const maxR    = [2.4, 1.4, 0.7][layer];
+        const opacity = [0.35, 0.55, 0.80][layer];
+        for(let i=0; i<count; i++){
+          const r = 0.2 + rng()*maxR;
+          ctx.fillStyle = `rgba(244,224,168,${opacity * (0.3 + rng()*0.7)})`;
+          ctx.beginPath();
+          ctx.arc(rng()*s, rng()*s, r, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
     },
   ];
 
