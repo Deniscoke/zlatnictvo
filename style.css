@@ -599,8 +599,8 @@ body{ background-color:transparent !important }
   z-index:-1;
   pointer-events:none;
   background-image:url('images/bg-marble.png');
-  background-size:cover;
-  background-position:center 50%;
+  background-size:130%;
+  background-position:center 40%;
   background-repeat:no-repeat;
   will-change:background-position;
 }
