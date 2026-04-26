@@ -1035,7 +1035,7 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   let ticking = false;
 
   function update(){
-    bg.style.transform = 'translateY(' + (window.scrollY * 0.22) + 'px)';
+    bg.style.transform = 'translateY(' + (window.scrollY * -0.2) + 'px)';
     ticking = false;
   }
 
