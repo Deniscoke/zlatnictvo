@@ -640,33 +640,34 @@ body{ background-color:transparent !important }
   color:#a8801f;
 }
 
-/* ===================== INTRO OVERLAY (white + gold splash) ===================== */
+/* ===================== INTRO OVERLAY (marble + gold splash) ===================== */
 #intro{
   position:fixed; inset:0; z-index:200;
   display:flex; align-items:center; justify-content:center;
-  /* Deep onyx — fallback before WebGL paints first frame */
   background:
-    radial-gradient(ellipse 80% 60% at 50% 50%, #1a1408 0%, #0b0a08 65%, #050505 100%);
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(10,7,4,.52) 0%, rgba(4,3,2,.80) 100%),
+    url('images/bg-marble.png') center/cover no-repeat;
   overflow:hidden;
   animation:intro-fade-in .9s cubic-bezier(.22,.61,.36,1) both;
 }
-/* WebGL canvas: full-bleed dark gold orb */
+/* WebGL canvas: gold dust particles float on top of marble via screen blend */
 #intro-canvas{
   position:absolute; inset:0;
   width:100%; height:100%;
   display:block;
   z-index:0;
   opacity:0;
+  mix-blend-mode:screen;
   animation:intro-canvas-fade 1.2s .15s ease-out forwards;
 }
 @keyframes intro-canvas-fade{
-  to{opacity:1}
+  to{opacity:.9}
 }
-/* Soft dark vignette around edges — focuses eye on the central orb */
+/* Edge vignette */
 #intro::after{
   content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
   background:
-    radial-gradient(ellipse 90% 70% at 50% 50%, transparent 40%, rgba(0,0,0,.55) 100%);
+    radial-gradient(ellipse 90% 70% at 50% 50%, transparent 35%, rgba(0,0,0,.60) 100%);
 }
 #intro.is-leaving{
   animation:intro-fade-out .85s cubic-bezier(.55,.06,.45,1) forwards;
@@ -702,7 +703,7 @@ body{ background-color:transparent !important }
   -webkit-background-clip:text; background-clip:text;
   display:inline-flex;
   text-indent:.16em;
-  filter:drop-shadow(0 2px 8px rgba(0,0,0,.45));
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.7)) drop-shadow(0 0 30px rgba(201,169,97,.3));
 }
 .intro-word span{
   display:inline-block;
