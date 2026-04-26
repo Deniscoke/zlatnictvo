@@ -47,34 +47,90 @@
 
 <body class="bg-onyx text-ink-2 font-sans antialiased overflow-x-hidden">
 
-<!-- ============== NAV TRANSITION (WebGL displacement gold-wipe) ============== -->
-<!-- Fullscreen canvas; shows for ~1s when a nav link is clicked, runs the
-     same displacement shader as webgl-distortion-slider between two procedural
-     gold textures so the section change feels like a luxury wipe. -->
-<canvas id="nav-transition" aria-hidden="true"></canvas>
-
 <!-- ============== KINTSUGI BACKDROP (cream + gold cracks) ============== -->
 <!-- Fixed full-page SVG: organic gold veins implying that the white field has
      been broken and rejoined with gold. Echoes the kintsugi (金継ぎ) repair art. -->
 <div id="kintsugi-bg" aria-hidden="true"></div>
 
-<!-- ============== INTRO OVERLAY (white + gold splash) ============== -->
+<!-- ============== INTRO OVERLAY: KINTSUGI MARBLE ============== -->
+<!-- "The Mending" — calm cream marble field on which gold seams grow outward
+     from a single point, branching into a network. ALTUN reveals as the
+     network completes. Wabi-sabi luxury: broken made more beautiful by gold. -->
 <div id="intro" role="dialog" aria-label="Welcome to Altun Atelier">
 
-  <!-- WebGL morphing-orb (dark gold raymarcher) — full-bleed centerpiece -->
-  <canvas id="intro-canvas" aria-hidden="true"></canvas>
+  <!-- Marble field (CSS gradients + SVG turbulence overlay) -->
+  <div class="intro-marble" aria-hidden="true"></div>
 
-  <!-- Center stage: minimal wordmark over the orb -->
+  <!-- SVG kintsugi crack network — paths animate via stroke-dashoffset -->
+  <svg class="intro-cracks" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="ks-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"  stop-color="#d4af54"/>
+        <stop offset="50%" stop-color="#a8801f"/>
+        <stop offset="100%" stop-color="#6b4a14"/>
+      </linearGradient>
+      <linearGradient id="ks-gold-bright" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"  stop-color="#a8801f"/>
+        <stop offset="50%" stop-color="#f4e0a8"/>
+        <stop offset="100%" stop-color="#a8801f"/>
+      </linearGradient>
+      <filter id="ks-glow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- Stage 1 (origin → 1.2s): main central seam from upper-left to lower-right -->
+    <path class="ks-path ks-p1" pathLength="1"
+          d="M 200,180 C 460,220 600,360 800,440 S 1140,560 1420,720"
+          fill="none" stroke="url(#ks-gold-bright)" stroke-width="2.4"
+          stroke-linecap="round" filter="url(#ks-glow)"/>
+
+    <!-- Stage 2 (0.9s → 2.1s): branches off the main seam -->
+    <path class="ks-path ks-p2" pathLength="1"
+          d="M 480,260 C 520,310 560,330 620,330 S 720,310 760,280"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.5"
+          stroke-linecap="round" filter="url(#ks-glow)"/>
+    <path class="ks-path ks-p3" pathLength="1"
+          d="M 800,440 C 820,480 840,520 850,580 S 860,680 870,760"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.4"
+          stroke-linecap="round" filter="url(#ks-glow)"/>
+    <path class="ks-path ks-p4" pathLength="1"
+          d="M 1100,560 C 1080,600 1040,620 980,620 S 880,600 840,580"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.4"
+          stroke-linecap="round" filter="url(#ks-glow)"/>
+
+    <!-- Stage 3 (1.6s → 2.8s): peripheral cracks crossing edges -->
+    <path class="ks-path ks-p5" pathLength="1"
+          d="M -20,540 C 140,560 280,540 380,500 S 520,420 600,400"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.2"
+          stroke-linecap="round" filter="url(#ks-glow)" opacity=".85"/>
+    <path class="ks-path ks-p6" pathLength="1"
+          d="M 1200,80 C 1180,180 1140,240 1080,280 S 980,340 920,360"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.2"
+          stroke-linecap="round" filter="url(#ks-glow)" opacity=".85"/>
+    <path class="ks-path ks-p7" pathLength="1"
+          d="M 320,860 C 380,800 440,760 500,740 S 620,700 700,680"
+          fill="none" stroke="url(#ks-gold)" stroke-width="1.1"
+          stroke-linecap="round" filter="url(#ks-glow)" opacity=".75"/>
+
+    <!-- Gold-leaf flakes at network junctions (fade in after each stage) -->
+    <g class="ks-flakes" fill="#f4e0a8">
+      <circle class="ks-flake ks-f1" cx="800" cy="440" r="3"/>
+      <circle class="ks-flake ks-f2" cx="480" cy="260" r="2.5"/>
+      <circle class="ks-flake ks-f3" cx="1100" cy="560" r="2.5"/>
+      <circle class="ks-flake ks-f4" cx="600" cy="400" r="2"/>
+      <circle class="ks-flake ks-f5" cx="920" cy="360" r="2"/>
+      <circle class="ks-flake ks-f6" cx="700" cy="680" r="2.2"/>
+    </g>
+  </svg>
+
+  <!-- Center stage: wordmark + tagline -->
   <div class="intro-stage">
-    <!-- Wordmark with per-letter stagger -->
     <h1 class="intro-word" aria-label="Altun">
       <span style="--i:0">A</span><span style="--i:1">L</span><span style="--i:2">T</span><span style="--i:3">U</span><span style="--i:4">N</span>
     </h1>
-
-    <!-- Italic gold "atelier" -->
     <p class="intro-sub"><em>atelier</em></p>
-
-    <!-- Decorative diamond + tagline row -->
     <div class="intro-tag-row">
       <span class="intro-diamond" aria-hidden="true"></span>
       <p class="intro-tag">Three Generations of Goldsmithing · Istanbul · 1978</p>
