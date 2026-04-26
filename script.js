@@ -1028,14 +1028,17 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
 
 /* ==================== PARALLAX BACKGROUND ==================== */
 (function(){
-  const bg = document.getElementById('parallax-bg');
+  const bg = document.getElementById('kintsugi-bg');
   if(!bg) return;
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   let ticking = false;
 
   function update(){
-    bg.style.transform = 'translateY(' + (window.scrollY * -0.2) + 'px)';
+    /* Positive offset = image shifts down = top of image stays visible longer
+       = background appears to move downward with the scroll */
+    const offset = window.scrollY * 0.18;
+    bg.style.backgroundPositionY = 'calc(50% + ' + offset + 'px)';
     ticking = false;
   }
 
