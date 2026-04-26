@@ -575,6 +575,25 @@ body{font-feature-settings:"kern","liga"}
 /* Hero canvas: never block touch-scroll on mobile */
 #hero-slider canvas{touch-action:none}
 
+/* ===================== GLOBAL GOLD-RAYMARCHER BACKDROP ===================== */
+/* Sits behind everything (z:0) but above body's bg-onyx fallback. Sections in
+   normal flow paint above it; transparent sections let the gold show through. */
+#bg-canvas{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  z-index:-1;            /* sits behind in-flow sections */
+  pointer-events:none;
+  display:block;
+  opacity:0;
+  transition:opacity 1.4s ease-out;
+}
+#bg-canvas.is-ready{ opacity:.9 }
+/* Body must NOT create a stacking context that traps z:-1 behind itself.
+   bg-onyx is opaque — replace with transparent so the gold shows through. */
+body{ background-color:transparent !important }
+/* HTML root keeps the dark fallback for any negative-z bleed beyond viewport */
+html{ background-color:#0b0b0c }
+
 /* ===================== INTRO OVERLAY (white + gold splash) ===================== */
 #intro{
   position:fixed; inset:0; z-index:200;

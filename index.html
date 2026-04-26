@@ -47,6 +47,11 @@
 
 <body class="bg-onyx text-ink-2 font-sans antialiased overflow-x-hidden">
 
+<!-- ============== GLOBAL GOLD-RAYMARCHER BACKDROP ============== -->
+<!-- Fixed full-bleed canvas, paints behind all sections. Sections with their own
+     bg-onyx/bg-onyx-2/bg-onyx-3 cover it; transparent sections let it bleed through. -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
 <!-- ============== INTRO OVERLAY (white + gold splash) ============== -->
 <div id="intro" role="dialog" aria-label="Welcome to Altun Atelier">
 
