@@ -512,80 +512,122 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
       in vec2 position;
       void main(){ gl_Position = vec4(position, 0., 1.); }`;
 
-    // Original raymarcher, with the final fragColor remapped from luminance into a
-    // cream → mid-gold → champagne palette so the geometry reads as molten gold on cream.
+    // Molten-gold orb raymarcher. Sphere SDF + multi-octave fbm noise
+    // displacement → soft wobbling blob (no crystalline facets). Single-bounce
+    // hit with wrap-diffuse + rim + fresnel for premium liquid-metal look.
     const fs = `#version 300 es
       precision highp float;
       out vec4 fragColor;
       uniform vec2 resolution;
       uniform float time;
-      #define T time
-      #define S smoothstep
+      #define T (time*0.6)
 
       mat3 rotY(float a){ float c=cos(a),s=sin(a); return mat3(vec3(c,0,s),vec3(0,1,0),vec3(-s,0,c)); }
-      float smin(float a,float b,float k){ float h=clamp(.5+.5*(b-a)/k,.0,1.); return mix(b,a,h)-k*h*(1.-h); }
-      float box(vec3 p,vec3 s,float r){ p=abs(p)-s; return length(max(vec3(0),p))+min(max(max(p.x,p.y),p.z),.0)-r; }
-      float oct(vec3 p,float s){ p=abs(p); return (p.x+p.y+p.z-s)*(1./sqrt(3.)); }
-      float rnd(float a){ return fract(sin(a*711.599)*756.839); }
-      float curve(float a,float b){ a/=b; return mix(rnd(floor(a)),rnd(floor(a)+1.),pow(S(.0,1.,fract(a)),10.)); }
-      float tick(float t,float e){ return floor(t)+pow(S(.0,1.,fract(t)),e); }
-      float map(vec3 p){ return smin(box(p,vec3(1),.125), oct(p, 1.8+.25*sin(curve(T,.5))), .125); }
-      vec3 dir(vec2 uv,vec3 ro,vec3 target,float zoom){
-        vec3 up=vec3(0,1,0), f=normalize(target-ro), r=normalize(cross(up,f)), u=cross(f,r);
-        return normalize(f*zoom + uv.x*r + uv.y*u);
+      mat3 rotX(float a){ float c=cos(a),s=sin(a); return mat3(vec3(1,0,0),vec3(0,c,-s),vec3(0,s,c)); }
+
+      vec3 hash3(vec3 p){
+        p = vec3(dot(p, vec3(127.1,311.7, 74.7)),
+                 dot(p, vec3(269.5,183.3,246.1)),
+                 dot(p, vec3(113.5,271.9,124.6)));
+        return -1.0 + 2.0*fract(sin(p)*43758.5453123);
       }
-      vec3 norm(vec3 p){
-        vec2 e=vec2(1e-3,0); float d=map(p);
-        return normalize(d - vec3(map(p-e.xyy), map(p-e.yxy), map(p-e.yyx)));
+
+      // Smooth value-noise (Perlin-style)
+      float noise(vec3 p){
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        vec3 u = f*f*(3.0 - 2.0*f);
+        return mix(mix(mix(dot(hash3(i+vec3(0,0,0)), f-vec3(0,0,0)),
+                           dot(hash3(i+vec3(1,0,0)), f-vec3(1,0,0)), u.x),
+                       mix(dot(hash3(i+vec3(0,1,0)), f-vec3(0,1,0)),
+                           dot(hash3(i+vec3(1,1,0)), f-vec3(1,1,0)), u.x), u.y),
+                   mix(mix(dot(hash3(i+vec3(0,0,1)), f-vec3(0,0,1)),
+                           dot(hash3(i+vec3(1,0,1)), f-vec3(1,0,1)), u.x),
+                       mix(dot(hash3(i+vec3(0,1,1)), f-vec3(0,1,1)),
+                           dot(hash3(i+vec3(1,1,1)), f-vec3(1,1,1)), u.x), u.y), u.z);
+      }
+
+      // Fractal Brownian Motion — 4 octaves, layered noise
+      float fbm(vec3 p){
+        float v = 0.0; float a = 0.5;
+        for(int k=0; k<4; k++){ v += a*noise(p); p *= 2.02; a *= 0.5; }
+        return v;
+      }
+
+      // Sphere with breathing radius + flowing noise displacement
+      float map(vec3 p){
+        p *= rotY(T*0.20) * rotX(sin(T*0.25)*0.35);
+        float r = 1.18 + 0.04*sin(T*0.7);
+        float n = fbm(p*1.4 + vec3(T*0.10, -T*0.07, T*0.09));
+        return length(p) - r - n*0.28;
+      }
+
+      vec3 calcNormal(vec3 p){
+        vec2 e = vec2(0.0009, 0);
+        return normalize(vec3(
+          map(p+e.xyy) - map(p-e.xyy),
+          map(p+e.yxy) - map(p-e.yxy),
+          map(p+e.yyx) - map(p-e.yyx)
+        ));
       }
 
       void main(){
-        vec2 uv = (gl_FragCoord.xy - .5*resolution.xy) / min(resolution.x, resolution.y);
-        vec3 col = vec3(0);
-        vec3 ro = vec3(0, 2.*sin(T*.5)*curve(T*.2,.2), -4);
-        ro *= rotY(acos(0.)*sin(tick(T,4.))*(-1.+2.*curve(10.*sin(T)*curve(rnd(uv.y/uv.x)*5.*sin(T),5.),4.)));
+        vec2 uv = (gl_FragCoord.xy - 0.5*resolution.xy) / min(resolution.x, resolution.y);
 
-        vec3 rd = dir(uv, ro, vec3(0), 1.);
+        vec3 ro = vec3(0.0, 0.0, -3.2);
+        vec3 rd = normalize(vec3(uv, 1.5));
+
+        // Background: deep onyx with faint warm radial bloom toward center
+        float bg = smoothstep(0.95, 0.0, length(uv));
+        vec3 col = mix(vec3(0.012,0.010,0.008), vec3(0.060,0.044,0.020), bg);
+
+        // Raymarch — under-relaxed step (×0.85) for noise-displaced SDF stability
         vec3 p = ro;
-        float i = .0, side = 1., at = .0;
-        for(; i<50.; i++){
-          float d = map(p)*side;
-          if(d < 1e-2){
-            vec3 n = norm(p)*side;
-            vec3 l = normalize(ro - vec3(sin(T), cos(T), 0));
-            vec3 r = reflect(rd, n);
-            if(dot(l,n) < .0) l = -l;
-            vec3 h = normalize(l - r);
-            float fres = pow(1.-max(.0, dot(-r, n)), 5.);
-            float diff = pow(max(.0, dot(l, n)), 4.);
-            float fog  = S(.2, .8, i/80.);
-            col += fog + mix(vec3(1,.5+.5*sin(tick(T,5.)),0), vec3(1,1,0), fog*fres)
-                        * diff * fres * (.8*pow(max(.0,dot(h,n)),12.) + .6*pow(max(.0,dot(r,n)),28.));
-            side = -side;
-            vec3 rdo = refract(rd, n, 1.+.45*side);
-            if(dot(rdo,rdo) == .0) rdo = reflect(r, n);
-            rd = rdo;
-            d = 2e-1;
-          }
-          if(d > 20.) break;
-          p += rd*d;
-          at += .01*(.01/d);
+        float t = 0.0;
+        bool hit = false;
+        for(int i=0; i<70; i++){
+          float d = map(p);
+          if(d < 0.001){ hit = true; break; }
+          if(t > 8.0) break;
+          p += rd*d*0.85;
+          t += d*0.85;
         }
-        col += pow(S(.0,1.,at), 3.);
-        col += S(.5, .85, max(.01, i/80.));
 
-        // ---- Dark gold orb palette: onyx → deep gold → mid → champagne ----
-        float lum = clamp(dot(col, vec3(.299,.587,.114)), 0., 1.);
-        vec3 onyx      = vec3(0.025, 0.022, 0.018);   // near-black void
-        vec3 deepGold  = vec3(0.300, 0.200, 0.060);   // burnt copper-gold rim
-        vec3 midGold   = vec3(0.720, 0.520, 0.150);   // rich molten gold
-        vec3 champagne = vec3(1.000, 0.870, 0.480);   // bright crystal highlight
+        if(hit){
+          vec3 n = calcNormal(p);
 
-        vec3 c = mix(onyx,    deepGold,  S(0.00, 0.30, lum));
-              c = mix(c,      midGold,   S(0.30, 0.65, lum));
-              c = mix(c,      champagne, S(0.75, 1.00, lum));
+          // Two-light soft setup
+          vec3 lKey = normalize(vec3( 0.6,  0.8, -0.5));
+          vec3 lRim = normalize(vec3(-0.4, -0.2,  0.9));
 
-        fragColor = vec4(c, 1.);
+          float wrap = dot(n, lKey)*0.5 + 0.5;          // soft wrap-around diffuse
+          float diff = max(0.0, dot(n, lKey));
+          float fres = pow(1.0 - max(0.0, dot(-rd, n)), 3.0);
+          float rim  = pow(max(0.0, dot(n, lRim)), 2.0);
+
+          vec3 deep  = vec3(0.30, 0.18, 0.05);
+          vec3 mid   = vec3(0.78, 0.55, 0.16);
+          vec3 hot   = vec3(1.00, 0.82, 0.40);
+          vec3 champ = vec3(1.00, 0.92, 0.65);
+
+          vec3 surf = mix(deep, mid, wrap);
+          surf = mix(surf, hot,   diff*0.7);
+          surf += champ * fres * 0.55;
+          surf += champ * rim  * 0.45;
+
+          // Inner gold-pool glow (modulated by 3D noise) — gives molten depth
+          float pool = fbm(p*1.8 + vec3(T*0.05));
+          surf += mid * (pool*0.5 + 0.5) * 0.18;
+
+          col = surf;
+        }
+
+        // Vignette + soft Reinhard tonemap + slight gamma lift
+        col *= 1.0 - 0.45*pow(length(uv), 1.6);
+        col = col / (1.0 + col*0.6);
+        col = pow(col, vec3(0.95));
+
+        fragColor = vec4(col, 1.0);
       }`;
 
     const compile = (type, src)=>{
