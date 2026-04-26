@@ -574,16 +574,16 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
         col += pow(S(.0,1.,at), 3.);
         col += S(.5, .85, max(.01, i/80.));
 
-        // ---- Re-skin: luminance → cream / mid-gold / champagne ----
+        // ---- Dark gold orb palette: onyx → deep gold → mid → champagne ----
         float lum = clamp(dot(col, vec3(.299,.587,.114)), 0., 1.);
-        vec3 cream     = vec3(0.985, 0.952, 0.860);
-        vec3 midGold   = vec3(0.780, 0.560, 0.180);
-        vec3 deepGold  = vec3(0.420, 0.280, 0.060);
-        vec3 champagne = vec3(1.000, 0.910, 0.600);
+        vec3 onyx      = vec3(0.025, 0.022, 0.018);   // near-black void
+        vec3 deepGold  = vec3(0.300, 0.200, 0.060);   // burnt copper-gold rim
+        vec3 midGold   = vec3(0.720, 0.520, 0.150);   // rich molten gold
+        vec3 champagne = vec3(1.000, 0.870, 0.480);   // bright crystal highlight
 
-        vec3 c = mix(cream,    midGold,   S(0.00, 0.35, lum));
-              c = mix(c,       deepGold,  S(0.20, 0.55, lum));
-              c = mix(c,       champagne, S(0.65, 1.00, lum));
+        vec3 c = mix(onyx,    deepGold,  S(0.00, 0.30, lum));
+              c = mix(c,      midGold,   S(0.30, 0.65, lum));
+              c = mix(c,      champagne, S(0.75, 1.00, lum));
 
         fragColor = vec4(c, 1.);
       }`;
