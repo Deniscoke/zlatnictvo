@@ -692,7 +692,18 @@
     </a>
   </div>
 
-  <form class="bg-onyx-3 border border-line p-8 lg:p-12 grid gap-6" id="contactForm" novalidate>
+  <form class="bg-onyx-3 border border-line p-8 lg:p-12 grid gap-6" id="contactForm" novalidate
+        action="https://api.web3forms.com/submit" method="POST">
+
+    <!-- Web3Forms config: replace YOUR_ACCESS_KEY_HERE with the key from
+         https://web3forms.com (free, takes 30 seconds). All other inputs are
+         user-facing form fields. -->
+    <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+    <input type="hidden" name="subject" value="Altun Atelier — Yeni Form">
+    <input type="hidden" name="from_name" value="Altun Atelier Website">
+    <!-- Honeypot: bots fill this; humans don't see it. Web3Forms drops if non-empty. -->
+    <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+
     <h3 class="font-serif text-2xl text-ink" data-i18n="form.title">Ya da kısa bir not bırakın</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <label class="flex flex-col gap-2">
@@ -700,10 +711,14 @@
         <input name="name" required class="form-input">
       </label>
       <label class="flex flex-col gap-2">
-        <span class="form-lbl" data-i18n="form.phone">Telefon / WhatsApp</span>
-        <input name="phone" inputmode="tel" required class="form-input">
+        <span class="form-lbl" data-i18n="form.email">E-posta</span>
+        <input name="email" type="email" required class="form-input">
       </label>
     </div>
+    <label class="flex flex-col gap-2">
+      <span class="form-lbl" data-i18n="form.phone">Telefon / WhatsApp</span>
+      <input name="phone" inputmode="tel" class="form-input">
+    </label>
     <label class="flex flex-col gap-2">
       <span class="form-lbl" data-i18n="form.interest">İlgilendiğiniz</span>
       <select name="interest" class="form-input">
@@ -715,10 +730,16 @@
     </label>
     <label class="flex flex-col gap-2">
       <span class="form-lbl" data-i18n="form.msg">Notunuz</span>
-      <textarea name="message" rows="4" class="form-input resize-y"></textarea>
+      <textarea name="message" rows="4" required class="form-input resize-y"></textarea>
     </label>
-    <button type="submit" class="btn btn-gold justify-self-start" data-i18n="form.send">WhatsApp'tan Gönder</button>
-    <p class="text-xs text-ink-3" data-i18n="form.note">Form gönderildiğinde bilgileriniz WhatsApp üzerinden bize iletilir.</p>
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn btn-gold" data-i18n="form.send">Gönder</button>
+      <button type="button" class="btn btn-ghost" id="formWaBtn" data-i18n="form.sendWa">WhatsApp ile gönder</button>
+    </div>
+    <p class="text-xs text-ink-3" data-i18n="form.note">Mesajınız e-posta ile bize ulaşır. WhatsApp düğmesi formu önceden doldurarak WhatsApp'ı açar.</p>
+
+    <!-- Status feedback (populated by JS) -->
+    <p id="formStatus" class="text-sm hidden" role="status" aria-live="polite"></p>
   </form>
 </section>
 
