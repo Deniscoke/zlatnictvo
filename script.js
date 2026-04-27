@@ -476,15 +476,10 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const intro = document.getElementById('intro');
   if(!intro) return;
 
-  const REDUCED  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  let dismissed  = false;
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let dismissed = false;
 
-  // ── SVG path fix for Safari ────────────────────────────────────────────────
-  // Safari mis-handles pathLength="1" with CSS stroke-dashoffset animation.
-  // getTotalLength() gives the real length in SVG user units; we set
-  // stroke-dasharray + stroke-dashoffset directly so the CSS @keyframes
-  // only needs to animate to 0 — no pathLength dependency at all.
+  // Safari fix: getTotalLength() is more reliable than pathLength="1"
   intro.querySelectorAll('.ks-path').forEach(p => {
     try {
       const len = p.getTotalLength();
@@ -493,50 +488,20 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
     } catch(e){}
   });
 
-  // ── Scroll lock ────────────────────────────────────────────────────────────
-  // html + body overflow:hidden is reliable on desktop.
-  // On iOS we also block touchmove directly on the overlay to stop
-  // rubber-band scroll bleeding through — no position:fixed needed.
-  document.documentElement.classList.add('scroll-locked');
-  document.body.classList.add('scroll-locked');
-  const blockScroll = e => e.preventDefault();
-  intro.addEventListener('touchmove', blockScroll, {passive:false});
-
-  // ── Dismiss ────────────────────────────────────────────────────────────────
   const dismiss = ()=>{
     if(dismissed) return;
     dismissed = true;
-    intro.removeEventListener('touchmove', blockScroll);
     intro.classList.add('is-leaving');
-    document.documentElement.classList.remove('scroll-locked');
-    document.body.classList.remove('scroll-locked');
     setTimeout(()=>{ intro.remove(); }, 900);
   };
 
-  // Skip button: touchstart (fires immediately, before 300ms click delay)
+  // Auto-dismiss after 4 s (or instantly on reduced-motion)
+  setTimeout(dismiss, REDUCED ? 100 : 4000);
+
+  // Skip button — simple click/touch, no complexity
   const skipBtn = intro.querySelector('.intro-skip');
-  if(skipBtn){
-    skipBtn.addEventListener('touchstart', e=>{
-      e.preventDefault(); e.stopPropagation(); dismiss();
-    }, {passive:false});
-    skipBtn.addEventListener('click', e=>{ e.stopPropagation(); dismiss(); });
-  }
-
-  // Overlay: touchstart with preventDefault is the most reliable iOS trigger.
-  // We check that the target is NOT the skip button (already handled above).
-  intro.addEventListener('touchstart', e=>{
-    if(skipBtn && skipBtn.contains(e.target)) return;
-    e.preventDefault();
-    dismiss();
-  }, {passive:false});
-  intro.addEventListener('click', dismiss); // desktop fallback
-
-  // Keyboard
-  const onKey = ()=>{ dismiss(); document.removeEventListener('keydown', onKey); };
-  document.addEventListener('keydown', onKey);
-
-  // Auto-dismiss
-  setTimeout(dismiss, REDUCED ? 600 : IS_TOUCH ? 4000 : 5000);
+  skipBtn?.addEventListener('click', dismiss);
+  skipBtn?.addEventListener('touchend', e=>{ e.preventDefault(); dismiss(); }, {passive:false});
 })();
 
 /* ===================== LIGHTBOX (product viewer) ===================== */
