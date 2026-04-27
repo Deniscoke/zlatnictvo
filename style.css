@@ -13,8 +13,15 @@
 
 html{scroll-behavior:smooth}
 body{font-feature-settings:"kern","liga"}
-/* Intro scroll-lock (replaces overflow:hidden which doesn't work on iOS) */
-body.intro-open{ overflow:hidden; position:fixed; width:100%; }
+/* Intro scroll-lock — position:fixed on body is the only reliable iOS Safari fix.
+   overflow:hidden alone doesn't prevent momentum scrolling on iOS. */
+body.intro-open{
+  overflow:hidden;
+  position:fixed;
+  width:100%;
+  left:0;
+  right:0;
+}
 
 /* Film grain */
 .grain{
@@ -1030,6 +1037,171 @@ body{ background-color:transparent !important }
   .lb-nav{ width:38px; height:38px }
   .lb-prev{ left:8px } .lb-next{ right:8px }
   .lb-stage{ padding:60px 12px 24px }
+}
+
+/* ===================== READABILITY =====================
+   Two layers:
+   A) Bug fixes — dark elements inside cream marble sections had dark text → invisible.
+   B) Enhancements — subtle frosted panels + text-shadow lift text off the marble texture.
+============================================================ */
+
+/* A1 — Promise cards: were bg-onyx on cream marble → frosted cream glass */
+#promise .card{
+  background:rgba(255,251,242,.82);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(168,128,31,.20);
+}
+#promise .card:hover{
+  background:rgba(255,251,242,.96);
+  border-color:rgba(168,128,31,.38);
+}
+#promise .card .card-num{ color:#a8801f }
+
+/* A2 — Contact form: bg-onyx-3 inside marble section → force light text back */
+#contactForm{ color:#f4ede4 }
+#contactForm h3{ color:#f4ede4 }
+
+/* B1 — Hero: dark radial vignette behind the text column */
+#home .max-w-2xl{
+  position:relative;
+  isolation:isolate;
+}
+#home .max-w-2xl::before{
+  content:"";
+  position:absolute;
+  inset:-4rem -6rem -4rem -8rem;
+  background:radial-gradient(ellipse 85% 80% at 30% 50%,rgba(10,9,8,.40) 0%,transparent 72%);
+  z-index:-1;
+  pointer-events:none;
+}
+/* B1b — Hero headings & subtext: sharper shadow */
+#home h1,#home #slideTitle{
+  text-shadow:0 2px 16px rgba(10,9,8,.55),0 0 40px rgba(10,9,8,.25);
+}
+#home p.text-ink-2{text-shadow:0 1px 10px rgba(10,9,8,.6)}
+
+/* B2 — Marble section headings: warm cream text-shadow lifts text off marble */
+#promise h2,#promise h3,
+#collections h2,#collections h3,
+#custom h2,#custom h3,
+#gallery h2,
+#contact h2,#contact h3{
+  text-shadow:0 0 28px rgba(255,251,242,.65);
+}
+#promise .kicker,#collections .kicker,#custom .kicker,
+#gallery .kicker,#contact .kicker{
+  text-shadow:0 0 14px rgba(255,251,242,.7);
+}
+
+/* B3 — Product card text: faint warm halo so marble veining doesn't compete */
+.prod-body h3,.prod-body .prod-cat,.prod-body .link-gold{
+  text-shadow:0 0 10px rgba(255,251,242,.45);
+}
+
+/* B4 — Step list items: very subtle frosted backdrop per step */
+.step-li{
+  background:rgba(255,251,242,.06);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.step-li:hover{background:rgba(255,251,242,.14)}
+
+/* ===================== iOS SAFARI COMPATIBILITY =====================
+   Safari-specific quirks that break layout or interactions:
+   1. -webkit- prefixes for backdrop-filter
+   2. 100svh fallback for pre-iOS-16 (uses -webkit-fill-available)
+   3. Input zoom prevention (font-size < 16px triggers auto-zoom)
+   4. Select element system chrome removal
+   5. Scroll chaining / rubber-band fix on fixed overlays
+   6. Tap highlight suppression sitewide
+   7. Momentum scrolling on lightbox
+   8. Fixed background-attachment not supported → use background-size workaround
+   9. WebKit font smoothing
+============================================================ */
+
+/* 1. Global tap highlight off — stops the grey flash on every tap */
+*{ -webkit-tap-highlight-color:transparent }
+a,button,[role="button"]{ cursor:pointer }
+
+/* 2. Hero: 100svh fallback for iOS < 16 */
+#home{
+  min-height:100vh;                /* legacy iOS */
+  min-height:100svh;               /* iOS 16+ / modern */
+}
+
+/* 3. Form inputs: force 16px so iOS doesn't auto-zoom on focus */
+.form-input{
+  font-size:1rem;  /* 16px — iOS zooms when font-size < 16px on focused input */
+  -webkit-appearance:none;         /* remove iOS default chrome on inputs */
+  border-radius:0;                 /* iOS adds rounded corners to inputs by default */
+}
+select.form-input{
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23c9a961' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right .75rem center;
+  padding-right:2rem;
+  cursor:pointer;
+}
+
+/* 4. Fixed overlay scroll lock on iOS — prevent rubber-band bleed-through */
+#intro,#lightbox{
+  -webkit-overflow-scrolling:auto;
+  overscroll-behavior:none;
+}
+
+/* 5. Lightbox: momentum scrolling for the image on small screens */
+.lb-img-wrap{
+  -webkit-overflow-scrolling:touch;
+}
+
+/* 6. Kintsugi backdrop: background-attachment:fixed is broken on iOS
+      → already using background-size not attachment, nothing to change.
+      But ensure kintsugi-bg doesn't use transforms that break on iOS */
+#kintsugi-bg{
+  -webkit-transform:translateZ(0); /* force GPU layer — prevents flicker on iOS */
+  transform:translateZ(0);
+}
+
+/* 7. Nav: backdrop-filter (blur on sticky nav) needs -webkit- prefix */
+#nav.is-stuck{
+  -webkit-backdrop-filter:blur(14px);
+}
+
+/* 8. Mobile menu: backdrop-filter prefix */
+#nav.menu-open .nav-links{
+  -webkit-backdrop-filter:blur(20px);
+}
+
+/* 9. WebKit font smoothing for crisp text on Retina */
+body{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* 10. Buttons: prevent iOS from adding system button styles */
+.btn,.btn-gold,.btn-ghost,.btn-ghost-gold{
+  -webkit-appearance:none;
+}
+
+/* 11. Lightbox close/nav: larger tap targets on iOS */
+@media (max-width:640px){
+  .lb-close{
+    width:44px;height:44px;  /* minimum iOS tap target */
+  }
+  .lb-nav{
+    width:44px;height:44px;
+  }
+}
+
+/* 12. Safe area insets for iPhone notch/home-indicator */
+#nav{
+  padding-left:max(1.25rem, env(safe-area-inset-left));
+  padding-right:max(1.25rem, env(safe-area-inset-right));
+}
+footer{
+  padding-bottom:env(safe-area-inset-bottom, 0px);
 }
 
 /* ===================== A11Y ===================== */
