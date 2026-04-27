@@ -13,14 +13,12 @@
 
 html{scroll-behavior:smooth}
 body{font-feature-settings:"kern","liga"}
-/* Intro scroll-lock — position:fixed on body is the only reliable iOS Safari fix.
-   overflow:hidden alone doesn't prevent momentum scrolling on iOS. */
-body.intro-open{
+/* Scroll lock — html+body overflow:hidden + direct touchmove block on the overlay.
+   No position:fixed needed (that breaks fixed children on iOS Safari). */
+html.scroll-locked,
+body.scroll-locked{
   overflow:hidden;
-  position:fixed;
-  width:100%;
-  left:0;
-  right:0;
+  height:100%;
 }
 
 /* Film grain */
@@ -691,16 +689,14 @@ body{ background-color:transparent !important }
   pointer-events:none;
 }
 .intro-cracks .ks-path{
-  /* path is normalized to length 1 via pathLength="1" attr; dasharray 1/1 +
-     dashoffset 1 means hidden; animate offset -> 0 to reveal stroke */
-  stroke-dasharray:1 1;
-  stroke-dashoffset:1;
+  /* stroke-dasharray + stroke-dashoffset are set via JS getTotalLength()
+     for cross-browser reliability (Safari mis-handles pathLength="1").
+     CSS only needs to animate the dashoffset to 0. */
   animation-fill-mode:forwards;
   animation-timing-function:cubic-bezier(.65,.01,.27,1);
 }
 @keyframes ks-draw{
-  from{stroke-dashoffset:1}
-  to  {stroke-dashoffset:0}
+  to{stroke-dashoffset:0}
 }
 /* Stage 1 — main seam grows from start */
 .ks-p1{ animation:ks-draw 1.4s 0.30s both }
@@ -734,14 +730,17 @@ body{ background-color:transparent !important }
 .ks-f6{ animation-delay:2.65s }
 #intro.is-leaving{
   animation:intro-fade-out .85s cubic-bezier(.55,.06,.45,1) forwards;
+  pointer-events:none; /* disable interaction immediately, don't wait for animation */
 }
 @keyframes intro-fade-in{
   from{opacity:0}
   to{opacity:1}
 }
 @keyframes intro-fade-out{
-  0%  {opacity:1; transform:scale(1);     filter:blur(0)}
-  100%{opacity:0; transform:scale(1.06);  filter:blur(8px); visibility:hidden}
+  /* No visibility:hidden — unreliable in Safari keyframes.
+     JS removes the element after 900ms via setTimeout. */
+  0%  {opacity:1; transform:scale(1);    filter:blur(0)}
+  100%{opacity:0; transform:scale(1.06); filter:blur(6px)}
 }
 
 /* ---- Center stage ---- */

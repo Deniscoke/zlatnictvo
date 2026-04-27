@@ -472,9 +472,6 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
 }
 
 /* ===================== INTRO OVERLAY (Kintsugi marble) ===================== */
-// "The Mending" — pure CSS+SVG choreography. Marble field fades in, gold seam
-// network draws across via SVG stroke-dashoffset, then ALTUN reveals.
-// ~4.7s total + .85s fade-out. Tap / click / key dismiss early.
 (function bootIntro(){
   const intro = document.getElementById('intro');
   if(!intro) return;
@@ -483,45 +480,62 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   let dismissed  = false;
 
-  // Lock scroll — iOS needs position:fixed on body (overflow:hidden alone won't do it).
-  // Preserve scroll offset so the page doesn't jump when the lock lifts.
-  const scrollY = window.scrollY;
-  document.body.style.top = `-${scrollY}px`;
-  document.body.classList.add('intro-open');
+  // ── SVG path fix for Safari ────────────────────────────────────────────────
+  // Safari mis-handles pathLength="1" with CSS stroke-dashoffset animation.
+  // getTotalLength() gives the real length in SVG user units; we set
+  // stroke-dasharray + stroke-dashoffset directly so the CSS @keyframes
+  // only needs to animate to 0 — no pathLength dependency at all.
+  intro.querySelectorAll('.ks-path').forEach(p => {
+    try {
+      const len = p.getTotalLength();
+      p.setAttribute('stroke-dasharray', len);
+      p.setAttribute('stroke-dashoffset', len);
+    } catch(e){}
+  });
 
-  // ----- Dismiss flow -----
+  // ── Scroll lock ────────────────────────────────────────────────────────────
+  // html + body overflow:hidden is reliable on desktop.
+  // On iOS we also block touchmove directly on the overlay to stop
+  // rubber-band scroll bleeding through — no position:fixed needed.
+  document.documentElement.classList.add('scroll-locked');
+  document.body.classList.add('scroll-locked');
+  const blockScroll = e => e.preventDefault();
+  intro.addEventListener('touchmove', blockScroll, {passive:false});
+
+  // ── Dismiss ────────────────────────────────────────────────────────────────
   const dismiss = ()=>{
     if(dismissed) return;
     dismissed = true;
+    intro.removeEventListener('touchmove', blockScroll);
     intro.classList.add('is-leaving');
-    const savedY = Math.abs(parseInt(document.body.style.top || '0', 10));
-    document.body.classList.remove('intro-open');
-    document.body.style.top = '';
-    window.scrollTo(0, savedY);
+    document.documentElement.classList.remove('scroll-locked');
+    document.body.classList.remove('scroll-locked');
     setTimeout(()=>{ intro.remove(); }, 900);
   };
 
-  // Skip button — listen on both click AND touchend (touchend fires before click on iOS)
+  // Skip button: touchstart (fires immediately, before 300ms click delay)
   const skipBtn = intro.querySelector('.intro-skip');
   if(skipBtn){
-    skipBtn.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); dismiss(); }, {passive:false});
-    skipBtn.addEventListener('click',    e=>{ e.stopPropagation(); dismiss(); });
+    skipBtn.addEventListener('touchstart', e=>{
+      e.preventDefault(); e.stopPropagation(); dismiss();
+    }, {passive:false});
+    skipBtn.addEventListener('click', e=>{ e.stopPropagation(); dismiss(); });
   }
 
-  // Overlay tap/click — iOS needs touchend OR cursor:pointer on the element (see CSS)
-  let touchMoved = false;
-  intro.addEventListener('touchstart', ()=>{ touchMoved = false; }, {passive:true});
-  intro.addEventListener('touchmove',  ()=>{ touchMoved = true;  }, {passive:true});
-  intro.addEventListener('touchend',   e=>{
-    if(!touchMoved){ e.preventDefault(); dismiss(); }
+  // Overlay: touchstart with preventDefault is the most reliable iOS trigger.
+  // We check that the target is NOT the skip button (already handled above).
+  intro.addEventListener('touchstart', e=>{
+    if(skipBtn && skipBtn.contains(e.target)) return;
+    e.preventDefault();
+    dismiss();
   }, {passive:false});
-  intro.addEventListener('click', dismiss);
+  intro.addEventListener('click', dismiss); // desktop fallback
 
   // Keyboard
   const onKey = ()=>{ dismiss(); document.removeEventListener('keydown', onKey); };
   document.addEventListener('keydown', onKey);
 
-  // Auto-dismiss: shorter on touch devices (animation simplified in CSS anyway)
+  // Auto-dismiss
   setTimeout(dismiss, REDUCED ? 600 : IS_TOUCH ? 4000 : 5000);
 })();
 
