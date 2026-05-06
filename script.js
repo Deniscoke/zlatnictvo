@@ -218,6 +218,34 @@ const io = new IntersectionObserver((entries)=>{
 },{threshold:.1, rootMargin:'0px 0px -6% 0px'});
 revealEls.forEach(el => io.observe(el));
 
+/* ---------- DYNAMIC GALLERY (admin-uploaded photos) ----------
+   Prepends owner-uploaded photos to the static curated gallery tiles.
+   Fails silently if /api/photos isn't reachable — static defaults remain. */
+(function bootDynamicGallery(){
+  const grid = document.querySelector('#gallery .grid');
+  if(!grid) return;
+
+  fetch('/api/photos', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : { photos:[] })
+    .then(({ photos }) => {
+      if(!photos || photos.length === 0) return;
+      const frag = document.createDocumentFragment();
+      photos.forEach(p => {
+        const fig = document.createElement('figure');
+        fig.className = 'tile aspect-square';
+        const img = document.createElement('img');
+        img.src = p.url;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.className = 'tile-img';
+        fig.appendChild(img);
+        frag.appendChild(fig);
+      });
+      grid.prepend(frag);
+    })
+    .catch(()=>{ /* silent — static defaults stay visible */ });
+})();
+
 /* ---------- FORM → EMAIL (Web3Forms) ---------- */
 (function bootContactForm(){
   const form = document.getElementById('contactForm');

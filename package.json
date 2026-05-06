@@ -1,0 +1,13 @@
+{
+  "name": "altun-atelier-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Altun Atelier — handcrafted gold jewelry presentation site with admin gallery uploads",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.27.0"
+  }
+}

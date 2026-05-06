@@ -19,3 +19,12 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# Node
+node_modules/
+package-lock.json
+
+# Local env
+.env
+.env.local
+.env.*.local
