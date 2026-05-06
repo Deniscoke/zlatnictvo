@@ -27,7 +27,7 @@ body{font-feature-settings:"kern","liga"}
   font-weight:400;
   letter-spacing:-.01em;
   line-height:1.05;
-  color:#f4ede4;
+  color:#1a1408;       /* dark on light theme */
   font-size:clamp(2.6rem, 6.5vw, 5.5rem);
 }
 .display em{
@@ -70,43 +70,57 @@ body{font-feature-settings:"kern","liga"}
   font-style:italic;
 }
 
-/* ===================== NAV ===================== */
+/* ===================== NAV =====================
+   Top of page: light text over hero image (transparent bg).
+   Stuck/scrolled: cream bg with dark text — readable over light sections. */
 #nav{transition:background .4s var(--ease), backdrop-filter .4s var(--ease), padding .4s var(--ease)}
 #nav.is-stuck{
-  background:rgba(10,9,8,.85);
+  background:rgba(253,250,242,.92);
+  -webkit-backdrop-filter:blur(14px);
   backdrop-filter:blur(14px);
   padding-top:.7rem;padding-bottom:.7rem;
-  border-bottom:1px solid rgba(201,169,97,.18);
+  border-bottom:1px solid rgba(168,128,31,.18);
 }
 .nav-a{
   font-size:.78rem;
   letter-spacing:.22em;
   text-transform:uppercase;
-  color:#d8cfbf;
+  color:#d8cfbf;          /* light when over hero */
   position:relative;
   padding:.5rem 0;
   transition:color .3s var(--ease);
 }
 .nav-a::after{
   content:"";position:absolute;left:0;bottom:0;
-  width:0;height:1px;background:#c9a961;
+  width:0;height:1px;background:#a8801f;
   transition:width .35s var(--ease);
 }
-.nav-a:hover{color:#f4ede4}
+.nav-a:hover{color:#fff}
 .nav-a:hover::after{width:100%}
+/* When stuck (scrolled past hero), flip text to dark */
+#nav.is-stuck .nav-a{color:#3b2807}
+#nav.is-stuck .nav-a:hover{color:#1a1408}
+#nav.is-stuck .lang-btn{color:#8a6f3a}
+#nav.is-stuck .lang-btn.is-active{color:#a8801f}
+#nav.is-stuck .brand-word{color:#1a1408}
+#nav.is-stuck .burger span{background:#3b2807}
 
-.lang-btn{padding:.3rem .15rem;color:#8a8278;transition:color .25s;font:inherit}
-.lang-btn.is-active{color:#c9a961}
-.lang-btn:hover{color:#f4ede4}
+.lang-btn{padding:.3rem .15rem;color:#d8cfbf;transition:color .25s;font:inherit}
+.lang-btn.is-active{color:#e8c87a}
+.lang-btn:hover{color:#fff}
 
-/* mobile menu */
+/* mobile menu — cream bg with dark text on light theme */
 #nav.menu-open .nav-links{
   display:flex;flex-direction:column;
   position:absolute;top:100%;left:0;right:0;
-  background:rgba(10,9,8,.97);backdrop-filter:blur(20px);
+  background:rgba(253,250,242,.97);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
   padding:2rem 1.5rem;gap:1.4rem;
-  border-bottom:1px solid rgba(201,169,97,.18);
+  border-bottom:1px solid rgba(168,128,31,.18);
 }
+#nav.menu-open .nav-links .nav-a{color:#3b2807}
+#nav.menu-open .nav-links .nav-a:hover{color:#1a1408}
 
 /* ===================== BUTTONS ===================== */
 .btn{
@@ -128,10 +142,10 @@ body{font-feature-settings:"kern","liga"}
 }
 .btn-gold:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 18px 40px -10px rgba(201,169,97,.6)}
 .btn-ghost{
-  color:#f4ede4;
-  border:1px solid rgba(244,237,228,.14);
+  color:#f4ede4;       /* used over hero image — stays light */
+  border:1px solid rgba(244,237,228,.30);
 }
-.btn-ghost:hover{border-color:#c9a961;color:#e8c87a}
+.btn-ghost:hover{border-color:#e8c87a;color:#e8c87a}
 .btn-ghost-gold{
   color:#c9a961;
   border:1px solid #c9a961;
@@ -419,11 +433,11 @@ body{font-feature-settings:"kern","liga"}
 
 .prod-media{
   position:relative;overflow:hidden;
-  background:#15110d;
-  border:1px solid rgba(201,169,97,.18);
+  background:#fffbf2;
+  border:1px solid rgba(168,128,31,.22);
   transition:border-color .5s var(--ease);
 }
-.card-prod:hover .prod-media{border-color:rgba(201,169,97,.5)}
+.card-prod:hover .prod-media{border-color:rgba(168,128,31,.55)}
 
 .prod-shimmer{
   position:absolute;inset:0;
@@ -440,7 +454,7 @@ body{font-feature-settings:"kern","liga"}
   color:#c9a961;font-size:.85rem;
   margin-bottom:.4rem;letter-spacing:.1em;
 }
-.prod-cat{font-size:.82rem;color:#8a8278;letter-spacing:.05em}
+.prod-cat{font-size:.82rem;color:#6b4a14;letter-spacing:.05em}
 
 /* ===================== STORY ===================== */
 .story-shimmer{
@@ -454,11 +468,10 @@ body{font-feature-settings:"kern","liga"}
 /* ===================== STEPS ===================== */
 .step-li{
   position:relative;
-  border-bottom:1px solid rgba(201,169,97,.18);
+  border-bottom:1px solid rgba(168,128,31,.22);
   transition:background .4s var(--ease);
 }
 .step-li:last-child{border-bottom:0}
-.step-li:hover{background:#15110d}
 @media (min-width:1024px){
   .step-li{border-bottom:0}
 }
@@ -470,62 +483,71 @@ body{font-feature-settings:"kern","liga"}
   display:block;margin-bottom:1.5rem;line-height:1;
 }
 
-/* ===================== TRUST CARDS ===================== */
+/* ===================== TRUST CARDS (light theme) ===================== */
 .trust-card{
-  background:#0a0908;
-  border:1px solid rgba(201,169,97,.18);
-  transition:border-color .5s var(--ease);
+  background:rgba(255,251,242,.85);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(168,128,31,.22);
+  transition:border-color .5s var(--ease), background .5s var(--ease);
 }
-.trust-card:hover{border-color:rgba(201,169,97,.5)}
+.trust-card:hover{
+  border-color:rgba(168,128,31,.55);
+  background:rgba(255,251,242,.96);
+}
 .trust-cap{padding:1.4rem}
 .trust-cap p{margin-top:.4rem;line-height:1.5}
 
-/* ===================== GALLERY TILES ===================== */
+/* ===================== GALLERY TILES (light theme) ===================== */
 .tile{
   position:relative;overflow:hidden;
-  border:1px solid rgba(201,169,97,.18);
+  border:1px solid rgba(168,128,31,.22);
+  background:rgba(255,251,242,.4);
   transition:border-color .6s var(--ease);
 }
-.tile:hover{border-color:rgba(201,169,97,.5)}
+.tile:hover{border-color:rgba(168,128,31,.55)}
 .tile-img{
   width:100%;height:100%;object-fit:cover;
   transition:transform .8s var(--ease);
 }
 .tile:hover .tile-img{transform:scale(1.06)}
 
-/* ===================== CONTACT CHANNELS ===================== */
+/* ===================== CONTACT CHANNELS (light theme) ===================== */
 .channel{
-  background:#0a0908;
+  background:rgba(255,251,242,.7);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
   padding:2.4rem 1.6rem;
   display:flex;flex-direction:column;gap:.5rem;
   text-align:left;
   transition:background .4s var(--ease);
 }
-.channel:hover{background:#15110d}
-.channel-ico{font-size:1.5rem;color:#c9a961;margin-bottom:.5rem}
+.channel:hover{background:rgba(255,251,242,.92)}
+.channel-ico{font-size:1.5rem;color:#a8801f;margin-bottom:.5rem}
 .channel-note{
   font-style:normal;font-size:.72rem;letter-spacing:.16em;
-  text-transform:uppercase;color:#8a8278;margin-top:.35rem;
+  text-transform:uppercase;color:#8a6f3a;margin-top:.35rem;
 }
 @media (max-width:767px){
   .channel{padding:1.6rem 1.2rem}
 }
 
-/* ===================== FORM ===================== */
+/* ===================== FORM (light theme) ===================== */
 .form-lbl{
-  font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8278;
+  font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:#6b4a14;
 }
 .form-input{
   background:transparent;
-  border:0;border-bottom:1px solid rgba(244,237,228,.08);
-  color:#f4ede4;
+  border:0;border-bottom:1px solid rgba(107,74,20,.25);
+  color:#1a1408;
   padding:.7rem 0;
   font:inherit;
   width:100%;
   transition:border-color .3s var(--ease);
 }
-.form-input:focus{outline:none;border-bottom-color:#c9a961}
-.form-input option{background:#15110d;color:#f4ede4}
+.form-input::placeholder{color:rgba(107,74,20,.5)}
+.form-input:focus{outline:none;border-bottom-color:#a8801f}
+.form-input option{background:#fffbf2;color:#1a1408}
 
 /* ===================== REVEAL ===================== */
 [data-reveal]{
@@ -598,39 +620,37 @@ body{ background-color:transparent !important }
   will-change:background-position;
 }
 
-/* ---- Light-section text overrides ---- */
-/* These sections (and their children) sit transparently over the kintsugi cream
-   so their original light-on-dark text would vanish. Force a dark palette here. */
-#promise, #collections, #custom, #gallery, #contact{
-  color:#1a1408;
+/* ---- IMAGE-BACKED SECTIONS: keep cinematic light-on-dark ----
+   Hero, story, and emotional banner sit over photographic backgrounds with
+   dark gradient overlays. Their text needs to stay LIGHT. We override the
+   Tailwind ink-* values back to the original cream tones for these contexts. */
+#home, #story, .quote-section{
+  color:#f4ede4;
 }
-#promise .display, #collections .display, #custom .display, #gallery .display, #contact .display,
-#promise h1, #promise h2, #promise h3,
-#collections h1, #collections h2, #collections h3,
-#custom h1, #custom h2, #custom h3,
-#gallery h1, #gallery h2, #gallery h3,
-#contact h1, #contact h2, #contact h3{
-  color:#1a1408;
+#home .text-ink, #story .text-ink, .quote-section .text-ink{
+  color:#f4ede4;
 }
-#promise .text-ink, #collections .text-ink, #custom .text-ink, #gallery .text-ink, #contact .text-ink{
-  color:#1a1408;
+#home .text-ink-2, #story .text-ink-2, .quote-section .text-ink-2{
+  color:#d8cfbf;
 }
-#promise .text-ink-2, #collections .text-ink-2, #custom .text-ink-2, #gallery .text-ink-2, #contact .text-ink-2{
-  color:#3b2807;
+#home .text-ink-3, #story .text-ink-3, .quote-section .text-ink-3{
+  color:#bfb5a3;
 }
-#promise .text-ink-3, #collections .text-ink-3, #custom .text-ink-3, #gallery .text-ink-3, #contact .text-ink-3{
-  color:#6b4a14;
+#home .display, #story .display, .quote-section .display,
+#home h1, #home h2, #home h3,
+#story h1, #story h2, #story h3,
+.quote-section h1, .quote-section h2, .quote-section h3{
+  color:#f4ede4;
 }
-/* Kicker / rule lines: gold tint pops on cream */
-#promise .kicker, #collections .kicker, #custom .kicker, #gallery .kicker, #contact .kicker{
-  color:#a8801f;
+/* Italic gold emphasis on dark sections */
+#home em, #story em, .quote-section em{
+  color:#e8c87a;
 }
-#promise .rule, #collections .rule, #custom .rule, #gallery .rule, #contact .rule{
-  background:linear-gradient(90deg, #a8801f, transparent);
+#home .kicker, #story .kicker, .quote-section .kicker{
+  color:#c9a961;
 }
-/* Italic emphasis still gold */
-#promise em, #collections em, #custom em, #gallery em, #contact em{
-  color:#a8801f;
+#home .rule, #story .rule, .quote-section .rule{
+  background:#c9a961;
 }
 
 /* ===================== INTRO OVERLAY (marble + gold splash) ===================== */
@@ -1007,13 +1027,12 @@ body{ background-color:transparent !important }
   .lb-stage{ padding:60px 12px 24px }
 }
 
-/* ===================== READABILITY =====================
-   Two layers:
-   A) Bug fixes — dark elements inside cream marble sections had dark text → invisible.
-   B) Enhancements — subtle frosted panels + text-shadow lift text off the marble texture.
+/* ===================== READABILITY (light theme) =====================
+   Light sections: subtle warm cream "lift" already provided by frosted cards.
+   Image-backed dark sections: stronger dark shadow keeps text legible.
 ============================================================ */
 
-/* A1 — Promise cards: were bg-onyx on cream marble → frosted cream glass */
+/* Promise cards: light frosted glass on cream marble (kept from previous turn) */
 #promise .card{
   background:rgba(255,251,242,.82);
   backdrop-filter:blur(10px);
@@ -1026,11 +1045,7 @@ body{ background-color:transparent !important }
 }
 #promise .card .card-num{ color:#a8801f }
 
-/* A2 — Contact form: bg-onyx-3 inside marble section → force light text back */
-#contactForm{ color:#f4ede4 }
-#contactForm h3{ color:#f4ede4 }
-
-/* B1 — Hero: dark radial vignette behind the text column */
+/* Hero text: dark radial vignette for legibility over photographic background */
 #home .max-w-2xl{
   position:relative;
   isolation:isolate;
@@ -1039,41 +1054,42 @@ body{ background-color:transparent !important }
   content:"";
   position:absolute;
   inset:-3rem 0 -3rem -2rem;
-  background:radial-gradient(ellipse 110% 80% at 20% 50%,rgba(10,9,8,.38) 0%,transparent 70%);
+  background:radial-gradient(ellipse 110% 80% at 20% 50%,rgba(10,9,8,.45) 0%,transparent 72%);
   z-index:-1;
   pointer-events:none;
 }
-/* B1b — Hero headings & subtext: sharper shadow */
-#home h1,#home #slideTitle{
-  text-shadow:0 2px 16px rgba(10,9,8,.55),0 0 40px rgba(10,9,8,.25);
+#home h1, #home #slideTitle, #story h1, #story h2, .quote-section blockquote p{
+  text-shadow:0 2px 16px rgba(10,9,8,.6), 0 0 40px rgba(10,9,8,.3);
 }
-#home p.text-ink-2{text-shadow:0 1px 10px rgba(10,9,8,.6)}
+#home p.text-ink-2, #story p, .quote-section blockquote{
+  text-shadow:0 1px 10px rgba(10,9,8,.7);
+}
 
-/* B2 — Marble section headings: warm cream text-shadow lifts text off marble */
-#promise h2,#promise h3,
-#collections h2,#collections h3,
-#custom h2,#custom h3,
+/* Light section headings: very subtle warm cream halo to lift off marble texture */
+#promise h2, #promise h3,
+#collections h2, #collections h3,
+#custom h2, #custom h3,
 #gallery h2,
-#contact h2,#contact h3{
-  text-shadow:0 0 28px rgba(255,251,242,.65);
+#contact h2, #contact h3{
+  text-shadow:0 0 28px rgba(255,251,242,.7);
 }
-#promise .kicker,#collections .kicker,#custom .kicker,
-#gallery .kicker,#contact .kicker{
+#promise .kicker, #collections .kicker, #custom .kicker,
+#gallery .kicker, #contact .kicker{
   text-shadow:0 0 14px rgba(255,251,242,.7);
 }
 
-/* B3 — Product card text: faint warm halo so marble veining doesn't compete */
-.prod-body h3,.prod-body .prod-cat,.prod-body .link-gold{
-  text-shadow:0 0 10px rgba(255,251,242,.45);
+/* Product card text: faint warm halo so marble veining doesn't compete */
+.prod-body h3, .prod-body .prod-cat, .prod-body .link-gold{
+  text-shadow:0 0 10px rgba(255,251,242,.5);
 }
 
-/* B4 — Step list items: very subtle frosted backdrop per step */
+/* Step list items: very subtle frosted backdrop per step */
 .step-li{
-  background:rgba(255,251,242,.06);
-  backdrop-filter:blur(2px);
-  -webkit-backdrop-filter:blur(2px);
+  background:rgba(255,251,242,.45);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
 }
-.step-li:hover{background:rgba(255,251,242,.14)}
+.step-li:hover{background:rgba(255,251,242,.7)}
 
 /* ===================== iOS SAFARI COMPATIBILITY =====================
    Safari-specific quirks that break layout or interactions:
