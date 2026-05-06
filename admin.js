@@ -1,6 +1,7 @@
 /* ============================================================
    ALTUN ATELIER — ADMIN PANEL
-   Login, photo upload (queued), gallery management.
+   Login, multi-category photo upload (Galeri / Koleksiyonlar),
+   and gallery management.
 
    Auth: password sent on every write request as `Authorization: Bearer <pwd>`.
          Stored in sessionStorage (cleared when browser tab closes).
@@ -9,22 +10,29 @@
 const SESSION_KEY = 'altun.admin.pwd';
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
-const loginView    = document.getElementById('loginView');
-const galleryView  = document.getElementById('galleryView');
-const loginForm    = document.getElementById('loginForm');
-const passwordIn   = document.getElementById('passwordInput');
-const loginBtn     = document.getElementById('loginBtn');
-const loginStatus  = document.getElementById('loginStatus');
-const logoutBtn    = document.getElementById('logoutBtn');
-const dropZone     = document.getElementById('dropZone');
-const fileInput    = document.getElementById('fileInput');
-const uploadQueue  = document.getElementById('uploadQueue');
-const galleryGrid  = document.getElementById('galleryGrid');
-const galleryStat  = document.getElementById('galleryStatus');
-const refreshBtn   = document.getElementById('refreshBtn');
-const confirmModal = document.getElementById('confirmModal');
-const confirmDel   = document.getElementById('confirmDelete');
-const confirmCanc  = document.getElementById('confirmCancel');
+const loginView      = document.getElementById('loginView');
+const galleryView    = document.getElementById('galleryView');
+const loginForm      = document.getElementById('loginForm');
+const passwordIn     = document.getElementById('passwordInput');
+const loginBtn       = document.getElementById('loginBtn');
+const loginStatus    = document.getElementById('loginStatus');
+const logoutBtn      = document.getElementById('logoutBtn');
+
+const dropZone       = document.getElementById('dropZone');
+const fileInput      = document.getElementById('fileInput');
+const uploadQueue    = document.getElementById('uploadQueue');
+const categorySelect = document.getElementById('categorySelect');
+const titleLabel     = document.getElementById('titleLabel');
+const titleInput     = document.getElementById('titleInput');
+
+const galleryGrid    = document.getElementById('galleryGrid');
+const collectionsGrid= document.getElementById('collectionsGrid');
+const galleryStat    = document.getElementById('galleryStatus');
+const refreshBtn     = document.getElementById('refreshBtn');
+
+const confirmModal   = document.getElementById('confirmModal');
+const confirmDel     = document.getElementById('confirmDelete');
+const confirmCanc    = document.getElementById('confirmCancel');
 
 let pendingDelete = null; // { url, tile }
 
@@ -35,15 +43,16 @@ const setStatus = (el, msg, kind = '') => {
   if (kind) el.classList.add(`is-${kind}`);
 };
 
-const getPwd  = () => sessionStorage.getItem(SESSION_KEY);
-const setPwd  = pwd => sessionStorage.setItem(SESSION_KEY, pwd);
+const getPwd   = () => sessionStorage.getItem(SESSION_KEY);
+const setPwd   = pwd => sessionStorage.setItem(SESSION_KEY, pwd);
 const clearPwd = () => sessionStorage.removeItem(SESSION_KEY);
 
 const showLogin = () => {
   loginView.hidden = false;
   galleryView.hidden = true;
   logoutBtn.hidden = true;
-  passwordIn.focus();
+  uploadQueue.innerHTML = ''; // clear stale queue items
+  setTimeout(() => passwordIn?.focus(), 50);
 };
 
 const showGallery = () => {
@@ -52,6 +61,14 @@ const showGallery = () => {
   logoutBtn.hidden = false;
   loadGallery();
 };
+
+// ── Title field visibility — only shown for "collections" category ────────
+function syncTitleVisibility() {
+  const isCollections = categorySelect.value === 'collections';
+  titleLabel.hidden = !isCollections;
+  if (!isCollections) titleInput.value = '';
+}
+categorySelect.addEventListener('change', syncTitleVisibility);
 
 // ── Login ──────────────────────────────────────────────────────────────────
 loginForm.addEventListener('submit', async (e) => {
@@ -90,40 +107,49 @@ logoutBtn.addEventListener('click', () => {
   showLogin();
 });
 
-// ── Gallery list ───────────────────────────────────────────────────────────
+// ── Gallery list — load both categories and split into two grids ──────────
 async function loadGallery() {
   setStatus(galleryStat, 'Yükleniyor…');
   galleryGrid.innerHTML = '';
+  collectionsGrid.innerHTML = '';
 
   try {
-    const res = await fetch('/api/photos');
+    const res = await fetch('/api/photos', { cache: 'no-store' });
     if (!res.ok) throw new Error('list-failed');
-    const { photos } = await res.json();
+    const { byCategory } = await res.json();
 
-    if (!photos || photos.length === 0) {
-      setStatus(galleryStat, '');
-      galleryGrid.innerHTML = '<li class="adm-empty">Henüz fotoğraf yok. Yukarıdan yükleyin.</li>';
-      return;
-    }
+    const galPhotos = byCategory?.gallery || [];
+    const colPhotos = byCategory?.collections || [];
 
-    setStatus(galleryStat, `${photos.length} fotoğraf`);
-    galleryGrid.innerHTML = photos.map(p => `
-      <li class="adm-tile" data-url="${escapeAttr(p.url)}">
-        <img src="${escapeAttr(p.url)}" alt="" loading="lazy" />
-        <button type="button" aria-label="Sil" data-del="${escapeAttr(p.url)}">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </li>
-    `).join('');
+    renderGrid(galleryGrid,    galPhotos, 'Henüz galeri fotoğrafı yok.');
+    renderGrid(collectionsGrid, colPhotos, 'Henüz koleksiyon parçası yok.');
+
+    setStatus(galleryStat, `${galPhotos.length + colPhotos.length} toplam fotoğraf`);
   } catch (err) {
     setStatus(galleryStat, 'Galeri yüklenemedi', 'error');
   }
 }
 
-// ── Delete (event delegation) ─────────────────────────────────────────────
-galleryGrid.addEventListener('click', (e) => {
+function renderGrid(grid, photos, emptyMsg) {
+  if (!photos.length) {
+    grid.innerHTML = `<li class="adm-empty">${escapeHtml(emptyMsg)}</li>`;
+    return;
+  }
+  grid.innerHTML = photos.map(p => `
+    <li class="adm-tile" data-url="${escapeAttr(p.url)}">
+      <img src="${escapeAttr(p.url)}" alt="${escapeAttr(p.title || '')}" loading="lazy" />
+      ${p.title ? `<span class="adm-tile-label">${escapeHtml(p.title)}</span>` : ''}
+      <button type="button" aria-label="Sil" data-del="${escapeAttr(p.url)}">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </li>
+  `).join('');
+}
+
+// ── Delete (event delegation across both grids) ───────────────────────────
+function handleDeleteClick(e) {
   const btn = e.target.closest('button[data-del]');
   if (!btn) return;
   pendingDelete = {
@@ -131,7 +157,9 @@ galleryGrid.addEventListener('click', (e) => {
     tile: btn.closest('.adm-tile')
   };
   confirmModal.hidden = false;
-});
+}
+galleryGrid.addEventListener('click', handleDeleteClick);
+collectionsGrid.addEventListener('click', handleDeleteClick);
 
 confirmCanc.addEventListener('click', () => {
   pendingDelete = null;
@@ -157,13 +185,13 @@ confirmDel.addEventListener('click', async () => {
     }
     if (!res.ok) throw new Error('delete-failed');
     tile?.remove();
-    if (galleryGrid.children.length === 0) loadGallery();
   } catch (err) {
     alert('Silme işlemi başarısız oldu.');
   } finally {
     confirmDel.disabled = false;
     pendingDelete = null;
     confirmModal.hidden = true;
+    loadGallery(); // refresh to be safe
   }
 });
 
@@ -185,29 +213,43 @@ dropZone.addEventListener('drop', (e) => {
 });
 fileInput.addEventListener('change', (e) => {
   if (e.target.files?.length) handleFiles(e.target.files);
-  e.target.value = ''; // reset so same file can be picked again
+  e.target.value = '';
 });
 
 async function handleFiles(fileList) {
+  // Validate: collections category requires a title
+  const category = categorySelect.value;
+  const title = titleInput.value.trim();
+  if (category === 'collections' && !title) {
+    alert('Koleksiyon fotoğrafı için lütfen bir başlık girin.');
+    titleInput.focus();
+    return;
+  }
+
   const files = Array.from(fileList);
   for (const file of files) {
-    const li = createQueueItem(file);
+    const li = createQueueItem(file, category, title);
     uploadQueue.appendChild(li);
-    await uploadOne(file, li);
+    await uploadOne(file, li, category, title);
   }
-  loadGallery(); // refresh grid
+  loadGallery();
+  // Auto-clear title after upload so next upload doesn't reuse
+  if (category === 'collections') titleInput.value = '';
 }
 
-function createQueueItem(file) {
+function createQueueItem(file, category, title) {
   const li = document.createElement('li');
+  const catLabel = category === 'collections' ? 'Koleksiyon' : 'Galeri';
+  const displayName = title ? `${title} (${file.name})` : file.name;
   li.innerHTML = `
-    <span class="name">${escapeHtml(file.name)}</span>
+    <span class="cat-badge">${escapeHtml(catLabel)}</span>
+    <span class="name">${escapeHtml(displayName)}</span>
     <span class="state">Bekliyor</span>
   `;
   return li;
 }
 
-async function uploadOne(file, li) {
+async function uploadOne(file, li, category, title) {
   const stateEl = li.querySelector('.state');
 
   // Client-side validation
@@ -222,6 +264,13 @@ async function uploadOne(file, li) {
     return;
   }
 
+  if (!getPwd()) {
+    li.classList.add('is-error');
+    stateEl.textContent = 'Önce giriş yapın';
+    showLogin();
+    return;
+  }
+
   li.classList.add('is-uploading');
   stateEl.textContent = 'Yükleniyor…';
 
@@ -229,8 +278,11 @@ async function uploadOne(file, li) {
     const res = await fetch('/api/photos', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${getPwd() || ''}`,
-        'Content-Type':  file.type
+        'Authorization':    `Bearer ${getPwd()}`,
+        'Content-Type':     file.type,
+        'X-Photo-Category': category,
+        // encode title to safely transit non-ASCII chars in headers
+        'X-Photo-Title':    encodeURIComponent(title || '')
       },
       body: file
     });
@@ -251,7 +303,6 @@ async function uploadOne(file, li) {
     li.classList.add('is-done');
     stateEl.textContent = 'Tamam';
 
-    // Auto-remove from queue after a moment
     setTimeout(() => li.remove(), 2500);
   } catch (err) {
     li.classList.remove('is-uploading');
@@ -273,6 +324,7 @@ function escapeHtml(s) {
 function escapeAttr(s) { return escapeHtml(s); }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
+syncTitleVisibility();
 if (getPwd()) {
   showGallery();
 } else {

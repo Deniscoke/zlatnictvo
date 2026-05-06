@@ -39,9 +39,12 @@ Hotovo! Po cca 1 minúte je admin panel funkčný.
 
 1. Otvor `https://tvoj-web.vercel.app/admin`
 2. Zadaj heslo ktoré si nastavil v Kroku 2
-3. **Yeni Fotoğraf Yükle** — drag & drop alebo klik na "Fotoğraf seçin"
-4. Fotky sa automaticky objavia na webe v sekcii **Galeri** (na začiatku, pred existujúcimi)
-5. **Mevcut Fotoğraflar** — zoznam všetkých uploadnutých — môžeš ich mazať klikom na X
+3. **Vyber bölüm (sekciu)** kde chceš fotku zobraziť:
+   - **Galeri** — pridá sa do galérie ako lifestyle/atelier fotka
+   - **Koleksiyonlar** — pridá sa ako produktová karta (vyžaduje aj **Başlık** = názov parče)
+4. Drag & drop fotku alebo klikni "Fotoğraf seçin"
+5. Fotka sa automaticky objaví na webe v zvolenej sekcii
+6. **Mevcut Fotoğraflar** — zoznam všetkých uploadnutých rozdelený na Galeri / Koleksiyonlar — môžeš ich mazať klikom na X
 
 ## Bezpečnosť
 

@@ -1,15 +1,19 @@
 /**
- * /api/photos — gallery photo CRUD via Vercel Blob
+ * /api/photos — gallery & collections photo CRUD via Vercel Blob
  *
- * GET    → public list of all gallery photos (no auth needed)
- * POST   → upload a new photo (auth required, multipart form data)
- * DELETE → remove a photo by URL (auth required, ?url=<blob-url>)
+ * GET    /api/photos?category=gallery|collections   → public list (no auth)
+ * GET    /api/photos                                → all categories grouped
+ * POST   /api/photos                                → upload (auth required)
+ *          Headers: X-Photo-Category, X-Photo-Title
+ *          Body:    raw image bytes (Content-Type = image/...)
+ * DELETE /api/photos?url=<blob-url>                 → delete (auth required)
  *
- * All write operations validate the Authorization header against
- * the ADMIN_PASSWORD env var (constant-time comparison).
+ * Storage layout in Vercel Blob:
+ *   gallery/<id>.<ext>
+ *   collections/<id>__<title-slug>.<ext>
  *
- * Photos are stored under the `gallery/` prefix in Blob storage so
- * other potential uses of the same Blob bucket stay isolated.
+ * The first path segment is the category. The optional `__<slug>` portion
+ * after the id encodes the human-readable title for collection items.
  */
 
 import { put, list, del } from '@vercel/blob';
@@ -17,16 +21,15 @@ import { timingSafeEqual } from 'node:crypto';
 
 export const config = {
   runtime: 'nodejs',
-  // Allow up to ~5MB images (Vercel function body limit is 4.5MB, but we leave a margin)
   api: { bodyParser: false }
 };
 
-const GALLERY_PREFIX = 'gallery/';
+const ALLOWED_CATEGORIES = new Set(['gallery', 'collections']);
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_BYTES = 4 * 1024 * 1024; // 4MB safe limit
+const MAX_BYTES = 4 * 1024 * 1024; // 4 MB safe limit (Vercel function body cap is 4.5 MB)
 
 // ──────────────────────────────────────────────────────────────────────────
-// Auth helper
+// Auth — constant-time password compare against ADMIN_PASSWORD env var
 // ──────────────────────────────────────────────────────────────────────────
 function isAuthed(req) {
   const expected = process.env.ADMIN_PASSWORD;
@@ -39,17 +42,15 @@ function isAuthed(req) {
   const provided = match[1];
   if (provided.length !== expected.length) return false;
 
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
   try {
-    return timingSafeEqual(a, b);
+    return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
   } catch {
     return false;
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Read full request body into a Buffer (since bodyParser is disabled)
+// Read raw request body (bodyParser disabled so we can stream binary uploads)
 // ──────────────────────────────────────────────────────────────────────────
 async function readBody(req) {
   const chunks = [];
@@ -65,25 +66,79 @@ async function readBody(req) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Slugify a title for safe pathname use (lowercase, ascii, hyphenated)
+// ──────────────────────────────────────────────────────────────────────────
+function slugify(s) {
+  return String(s || '')
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '') // strip combining diacriticals
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Decode a blob pathname back into { category, id, title }
+//   "gallery/1234567890-abc.jpg"               → category=gallery
+//   "collections/1234567890-abc__hilal-kolye.jpg" → category=collections, title="Hilal Kolye"
+// ──────────────────────────────────────────────────────────────────────────
+function decodePathname(pathname) {
+  const slash = pathname.indexOf('/');
+  if (slash < 0) return { category: 'gallery', title: '' };
+  const category = pathname.slice(0, slash);
+  const rest = pathname.slice(slash + 1);
+  const dot = rest.lastIndexOf('.');
+  const stem = dot > 0 ? rest.slice(0, dot) : rest;
+  const sep = stem.indexOf('__');
+  let title = '';
+  if (sep > 0) {
+    title = stem.slice(sep + 2)
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase()); // title case
+  }
+  return { category, title };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Handler
 // ──────────────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   try {
-    // ─── GET: public list ────────────────────────────────────────────────
+    // ─── GET ──────────────────────────────────────────────────────────────
     if (req.method === 'GET') {
       if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        return res.status(200).json({ photos: [] }); // graceful empty
+        return res.status(200).json({ photos: [], byCategory: { gallery: [], collections: [] } });
       }
-      const result = await list({ prefix: GALLERY_PREFIX });
-      const photos = result.blobs
-        .map(b => ({
+
+      const filterCat = (req.query?.category || '').toString();
+      const result = await list({});
+
+      const photos = result.blobs.map(b => {
+        const meta = decodePathname(b.pathname);
+        return {
           url: b.url,
           pathname: b.pathname,
+          category: meta.category,
+          title: meta.title,
           uploadedAt: b.uploadedAt,
           size: b.size
-        }))
-        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-      return res.status(200).json({ photos });
+        };
+      });
+
+      photos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+      // Optional category filter
+      const filtered = filterCat
+        ? photos.filter(p => p.category === filterCat)
+        : photos;
+
+      // Also provide a grouped view for the admin panel
+      const byCategory = { gallery: [], collections: [] };
+      for (const p of photos) {
+        if (byCategory[p.category]) byCategory[p.category].push(p);
+      }
+
+      return res.status(200).json({ photos: filtered, byCategory });
     }
 
     // ─── POST: upload (auth required) ────────────────────────────────────
@@ -106,17 +161,28 @@ export default async function handler(req, res) {
         });
       }
 
+      const category = (req.headers['x-photo-category'] || 'gallery').toString();
+      if (!ALLOWED_CATEGORIES.has(category)) {
+        return res.status(400).json({ ok: false, error: `Invalid category: ${category}` });
+      }
+
+      const titleHeader = req.headers['x-photo-title'] || '';
+      let titleRaw = '';
+      try { titleRaw = decodeURIComponent(String(titleHeader)).trim(); }
+      catch { titleRaw = String(titleHeader).trim(); }
+      const titleSlug = slugify(titleRaw);
+
       const buf = await readBody(req);
       if (buf.length === 0) {
         return res.status(400).json({ ok: false, error: 'Empty file' });
       }
 
-      // Filename: random ID + extension (never trust client filename)
       const ext = contentType === 'image/png' ? 'png'
                 : contentType === 'image/webp' ? 'webp'
                 : 'jpg';
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      const pathname = `${GALLERY_PREFIX}${id}.${ext}`;
+      const stem = titleSlug ? `${id}__${titleSlug}` : id;
+      const pathname = `${category}/${stem}.${ext}`;
 
       const blob = await put(pathname, buf, {
         access: 'public',
@@ -127,7 +193,9 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         url: blob.url,
-        pathname: blob.pathname
+        pathname: blob.pathname,
+        category,
+        title: titleRaw
       });
     }
 
@@ -140,9 +208,10 @@ export default async function handler(req, res) {
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ ok: false, error: 'Missing ?url=' });
       }
-      // Sanity check: only delete from our gallery prefix
-      if (!url.includes(GALLERY_PREFIX.replace('/', ''))) {
-        return res.status(400).json({ ok: false, error: 'Refused: not a gallery URL' });
+      // Sanity check: refuse if URL doesn't look like one of our categories
+      const isOurs = [...ALLOWED_CATEGORIES].some(c => url.includes(`/${c}/`));
+      if (!isOurs) {
+        return res.status(400).json({ ok: false, error: 'Refused: not a managed URL' });
       }
       await del(url);
       return res.status(200).json({ ok: true });

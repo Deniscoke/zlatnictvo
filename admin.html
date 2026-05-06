@@ -59,7 +59,21 @@
     <!-- Upload card -->
     <div class="adm-card adm-upload">
       <h2>Yeni Fotoğraf Yükle</h2>
-      <p class="adm-muted">JPG, PNG veya WebP — maksimum 4 MB. Yüklenen fotoğraflar sitedeki galeride görünür.</p>
+      <p class="adm-muted">JPG, PNG veya WebP — maksimum 4 MB. Aşağıdan fotoğrafın hangi bölümde görüneceğini seçin.</p>
+
+      <div class="adm-upload-meta">
+        <label class="adm-label">
+          <span>Bölüm</span>
+          <select id="categorySelect">
+            <option value="gallery">Galeri (yaşam fotoğrafları)</option>
+            <option value="collections">Koleksiyonlar (ürün kartları)</option>
+          </select>
+        </label>
+        <label class="adm-label" id="titleLabel" hidden>
+          <span>Başlık (Koleksiyon parça adı)</span>
+          <input type="text" id="titleInput" placeholder="Örn: Hilal Kolye" maxlength="60" />
+        </label>
+      </div>
 
       <label class="adm-drop" id="dropZone">
         <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden />
@@ -75,14 +89,19 @@
       <ul id="uploadQueue" class="adm-queue"></ul>
     </div>
 
-    <!-- Existing photos grid -->
+    <!-- Existing photos grid (split by category) -->
     <div class="adm-card">
       <div class="adm-card-head">
         <h2>Mevcut Fotoğraflar</h2>
         <button id="refreshBtn" class="adm-btn adm-btn-ghost adm-btn-sm">Yenile</button>
       </div>
       <p id="galleryStatus" class="adm-muted">Yükleniyor…</p>
+
+      <h3 class="adm-section-title">Galeri</h3>
       <ul id="galleryGrid" class="adm-grid"></ul>
+
+      <h3 class="adm-section-title">Koleksiyonlar</h3>
+      <ul id="collectionsGrid" class="adm-grid"></ul>
     </div>
 
   </section>

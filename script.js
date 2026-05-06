@@ -218,30 +218,68 @@ const io = new IntersectionObserver((entries)=>{
 },{threshold:.1, rootMargin:'0px 0px -6% 0px'});
 revealEls.forEach(el => io.observe(el));
 
-/* ---------- DYNAMIC GALLERY (admin-uploaded photos) ----------
-   Prepends owner-uploaded photos to the static curated gallery tiles.
-   Fails silently if /api/photos isn't reachable — static defaults remain. */
-(function bootDynamicGallery(){
-  const grid = document.querySelector('#gallery .grid');
-  if(!grid) return;
+/* ---------- DYNAMIC SECTIONS (admin-uploaded photos) ----------
+   Single fetch returns photos grouped by category. We then:
+   - prepend "gallery" photos to the gallery tile grid
+   - append "collections" photos as additional product cards
+   Fails silently if API is unreachable — static curated content stays. */
+(function bootDynamicContent(){
+  const galleryGrid     = document.querySelector('#gallery .grid');
+  const collectionsGrid = document.querySelector('#collections .grid');
+  if(!galleryGrid && !collectionsGrid) return;
 
   fetch('/api/photos', { cache:'no-store' })
-    .then(r => r.ok ? r.json() : { photos:[] })
-    .then(({ photos }) => {
-      if(!photos || photos.length === 0) return;
-      const frag = document.createDocumentFragment();
-      photos.forEach(p => {
-        const fig = document.createElement('figure');
-        fig.className = 'tile aspect-square';
-        const img = document.createElement('img');
-        img.src = p.url;
-        img.alt = '';
-        img.loading = 'lazy';
-        img.className = 'tile-img';
-        fig.appendChild(img);
-        frag.appendChild(fig);
-      });
-      grid.prepend(frag);
+    .then(r => r.ok ? r.json() : { byCategory:{ gallery:[], collections:[] } })
+    .then(({ byCategory }) => {
+      const galPhotos = byCategory?.gallery || [];
+      const colPhotos = byCategory?.collections || [];
+
+      // Gallery: prepend simple square tiles
+      if(galleryGrid && galPhotos.length){
+        const frag = document.createDocumentFragment();
+        galPhotos.forEach(p => {
+          const fig = document.createElement('figure');
+          fig.className = 'tile aspect-square';
+          const img = document.createElement('img');
+          img.src = p.url;
+          img.alt = p.title || '';
+          img.loading = 'lazy';
+          img.className = 'tile-img';
+          fig.appendChild(img);
+          frag.appendChild(fig);
+        });
+        galleryGrid.prepend(frag);
+      }
+
+      // Collections: append product cards (same structure as static cards)
+      if(collectionsGrid && colPhotos.length){
+        const frag = document.createDocumentFragment();
+        colPhotos.forEach((p, i) => {
+          const article = document.createElement('article');
+          article.className = 'card-prod';
+          // Use anchor + lightbox dataset so click opens the lightbox just like curated cards
+          const safeTitle = (p.title || 'Yeni Parça').replace(/"/g, '&quot;');
+          const num = String(7 + i).padStart(2, '0'); // continues numbering after curated 06
+          article.innerHTML = `
+            <a class="prod-link block group" href="#" data-lightbox="user.${i}"
+               data-img="${p.url}" data-title="${safeTitle}">
+              <div class="prod-media h-[220px] sm:h-[360px]">
+                <img src="${p.url}" alt="${safeTitle}" loading="lazy"
+                     class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+                <div class="prod-shimmer"></div>
+              </div>
+              <div class="prod-body">
+                <p class="prod-num">N°${num}</p>
+                <h3 class="font-serif text-2xl text-ink mb-1">${safeTitle}</h3>
+                <p class="prod-cat">Yeni Koleksiyon</p>
+                <span class="link-gold mt-3 inline-block">Detayları Gör →</span>
+              </div>
+            </a>
+          `;
+          frag.appendChild(article);
+        });
+        collectionsGrid.appendChild(frag);
+      }
     })
     .catch(()=>{ /* silent — static defaults stay visible */ });
 })();
@@ -541,9 +579,6 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const lb = document.getElementById('lightbox');
   if(!lb) return;
 
-  const cards = Array.from(document.querySelectorAll('[data-lightbox]'));
-  if(!cards.length) return;
-
   const imgEl   = lb.querySelector('.lb-img');
   const numEl   = lb.querySelector('.lb-num');
   const titleEl = lb.querySelector('.lb-title');
@@ -553,27 +588,36 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const nextBtn  = lb.querySelector('.lb-next');
 
   let currentIdx = 0;
+  // Cards are queried lazily — supports dynamically-added cards from /api/photos
+  const getCards = () => Array.from(document.querySelectorAll('[data-lightbox]'));
 
   const render = (idx)=>{
+    const cards = getCards();
+    if(!cards.length) return;
     currentIdx = (idx + cards.length) % cards.length;
     const card = cards[currentIdx];
     const lang = document.documentElement.lang || 'tr';
     const dict = (typeof i18n !== 'undefined' && i18n[lang]) || {};
 
+    // Title: try i18n key first (static cards), then literal data-title (dynamic cards)
+    const title = (card.dataset.i18nTitle && dict[card.dataset.i18nTitle])
+                || card.dataset.title || '';
+    const cat   = (card.dataset.i18nCat && dict[card.dataset.i18nCat])
+                || card.dataset.cat || '';
+
     imgEl.classList.remove('is-loaded');
     imgEl.src = card.dataset.img || '';
-    imgEl.alt = dict[card.dataset.i18nTitle] || '';
+    imgEl.alt = title;
     imgEl.onload = ()=> imgEl.classList.add('is-loaded');
 
     numEl.textContent   = `N°${String(currentIdx + 1).padStart(2,'0')}`;
-    titleEl.textContent = dict[card.dataset.i18nTitle] || '';
-    catEl.textContent   = dict[card.dataset.i18nCat]   || '';
+    titleEl.textContent = title;
+    catEl.textContent   = cat;
   };
 
   const open = (idx)=>{
     render(idx);
     lb.hidden = false;
-    // next frame so the [hidden]→display:flex transition can animate
     requestAnimationFrame(()=> lb.classList.add('is-open'));
     lb.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -589,12 +633,14 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const next = ()=> render(currentIdx + 1);
   const prev = ()=> render(currentIdx - 1);
 
-  // Wire product cards
-  cards.forEach((card, i)=>{
-    card.addEventListener('click', e=>{
-      e.preventDefault();
-      open(i);
-    });
+  // Event delegation — handles both static cards and dynamically-added ones
+  document.addEventListener('click', e=>{
+    const card = e.target.closest('[data-lightbox]');
+    if(!card) return;
+    e.preventDefault();
+    const cards = getCards();
+    const idx = cards.indexOf(card);
+    if(idx >= 0) open(idx);
   });
 
   // Controls
