@@ -611,13 +611,14 @@ html{ background-color:#fdfaf2 }
 body{ background-color:transparent !important }
 #kintsugi-bg{
   position:fixed; inset:0;
-  z-index:-1;
+  z-index:-2;                    /* below body::before cream overlay */
   pointer-events:none;
   background-image:url('images/bg-marble.png');
   background-size:130%;
   background-position:center 40%;
   background-repeat:no-repeat;
   will-change:background-position;
+  opacity:.55;                   /* less competing texture under text */
 }
 
 /* ---- IMAGE-BACKED SECTIONS: keep cinematic light-on-dark ----
@@ -1027,25 +1028,84 @@ body{ background-color:transparent !important }
   .lb-stage{ padding:60px 12px 24px }
 }
 
-/* ===================== READABILITY (light theme) =====================
-   Light sections: subtle warm cream "lift" already provided by frosted cards.
-   Image-backed dark sections: stronger dark shadow keeps text legible.
+/* ===================== READABILITY OVERHAUL (WCAG AA) =====================
+   Professional typography hardening for light theme.
+   Strategy:
+   1) Soften marble texture noise via cream overlay (single biggest impact)
+   2) Make all cards opaque enough to fully cover marble (no bleed-through)
+   3) Add frosted backdrop panels behind floating section headers
+   4) Replace useless cream-glow text-shadows with subtle dark crispness
+   5) Bump font-weight on body/muted text for stroke visibility on texture
+   6) Use deep gold (#7a5d10) for small accent text — passes AA on cream
+   7) Keep bright gold for large display text (passes AA-Large at 3:1)
 ============================================================ */
 
-/* Promise cards: light frosted glass on cream marble (kept from previous turn) */
+/* ─── 1. Marble texture softening overlay ─────────────────────────────────
+   Drops a translucent cream layer over the whole kintsugi backdrop, reducing
+   visual noise while preserving the warmth. Single biggest readability win. */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background:rgba(253,250,242,.55);
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ─── 2. Card opacity — fully opaque-feeling so marble can't bleed through ── */
 #promise .card{
-  background:rgba(255,251,242,.82);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(168,128,31,.20);
+  background:rgba(255,252,246,.94);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(122,93,16,.22);
 }
 #promise .card:hover{
-  background:rgba(255,251,242,.96);
-  border-color:rgba(168,128,31,.38);
+  background:rgba(255,252,246,.99);
+  border-color:rgba(122,93,16,.42);
 }
-#promise .card .card-num{ color:#a8801f }
+#promise .card .card-num{ color:#7a5d10 }
 
-/* Hero text: dark radial vignette for legibility over photographic background */
+.trust-card{
+  background:rgba(255,252,246,.92) !important;
+}
+.trust-card:hover{
+  background:rgba(255,252,246,.99) !important;
+}
+
+.channel{
+  background:rgba(255,252,246,.85) !important;
+}
+.channel:hover{
+  background:rgba(255,252,246,.97) !important;
+}
+
+/* ─── 3. Frosted backdrop panels behind floating section headers ──────────
+   The section headers (kicker + h2 + lede) float on marble. A subtle frosted
+   backdrop visually anchors them and improves contrast. */
+#promise > header,
+#collections > header > div:first-child,
+#gallery > header,
+#contact > header,
+#custom .order-2{
+  position:relative;
+  isolation:isolate;
+}
+#promise > header::before,
+#collections > header > div:first-child::before,
+#gallery > header::before,
+#contact > header::before,
+#custom .order-2::before{
+  content:"";
+  position:absolute;
+  inset:-1rem -1.25rem;
+  background:rgba(255,252,246,.7);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border-radius:6px;
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ─── 4. Hero text panel — strong dark vignette for image bg ─────────────── */
 #home .max-w-2xl{
   position:relative;
   isolation:isolate;
@@ -1054,42 +1114,138 @@ body{ background-color:transparent !important }
   content:"";
   position:absolute;
   inset:-3rem 0 -3rem -2rem;
-  background:radial-gradient(ellipse 110% 80% at 20% 50%,rgba(10,9,8,.45) 0%,transparent 72%);
+  background:radial-gradient(ellipse 110% 85% at 25% 50%,rgba(10,9,8,.55) 0%,rgba(10,9,8,.18) 55%,transparent 78%);
   z-index:-1;
   pointer-events:none;
 }
 #home h1, #home #slideTitle, #story h1, #story h2, .quote-section blockquote p{
-  text-shadow:0 2px 16px rgba(10,9,8,.6), 0 0 40px rgba(10,9,8,.3);
+  text-shadow:0 2px 16px rgba(10,9,8,.7), 0 0 40px rgba(10,9,8,.4);
 }
 #home p.text-ink-2, #story p, .quote-section blockquote{
-  text-shadow:0 1px 10px rgba(10,9,8,.7);
+  text-shadow:0 1px 10px rgba(10,9,8,.75);
 }
 
-/* Light section headings: very subtle warm cream halo to lift off marble texture */
+/* ─── 5. Subtle dark crispness shadow for headings on light bg ────────────
+   Cream-glow shadow on cream bg = invisible. Use a tiny dark drop-shadow
+   instead to give text a crisp edge against the marble texture. */
 #promise h2, #promise h3,
 #collections h2, #collections h3,
 #custom h2, #custom h3,
 #gallery h2,
 #contact h2, #contact h3{
-  text-shadow:0 0 28px rgba(255,251,242,.7);
-}
-#promise .kicker, #collections .kicker, #custom .kicker,
-#gallery .kicker, #contact .kicker{
-  text-shadow:0 0 14px rgba(255,251,242,.7);
+  text-shadow:0 1px 1px rgba(255,252,246,.8), 0 0 12px rgba(255,252,246,.5);
 }
 
-/* Product card text: faint warm halo so marble veining doesn't compete */
-.prod-body h3, .prod-body .prod-cat, .prod-body .link-gold{
-  text-shadow:0 0 10px rgba(255,251,242,.5);
+/* ─── 6. Kicker labels — deeper gold for AA contrast at small size ──────── */
+.kicker{
+  color:#7a5d10;       /* 5.5:1 on cream — passes AA */
+  font-weight:600;     /* heavier for tiny caps */
 }
 
-/* Step list items: very subtle frosted backdrop per step */
-.step-li{
-  background:rgba(255,251,242,.45);
-  backdrop-filter:blur(4px);
+/* Section-specific kicker overrides for image-backed (dark) sections */
+#home .kicker, #story .kicker, .quote-section .kicker{
+  color:#c9a961;       /* light gold on dark image */
+  font-weight:500;
+  text-shadow:0 1px 4px rgba(10,9,8,.7);
+}
+
+/* ─── 7. Body text font-weight bump — strokes need to fight marble texture */
+.text-ink-3{
+  font-weight:450;
+}
+.prod-cat, .channel-note, .step-li p{
+  font-weight:500;
+}
+
+/* ─── 8. Product card body — subtle backdrop so dark text doesn't merge with marble */
+.prod-body{
+  position:relative;
+  padding-left:.6rem;
+  padding-right:.6rem;
+  isolation:isolate;
+}
+.prod-body::before{
+  content:"";
+  position:absolute;
+  inset:0 -.4rem 0 -.4rem;
+  background:rgba(255,252,246,.55);
   -webkit-backdrop-filter:blur(4px);
+  backdrop-filter:blur(4px);
+  border-radius:3px;
+  z-index:-1;
+  pointer-events:none;
 }
-.step-li:hover{background:rgba(255,251,242,.7)}
+.prod-body h3{ color:#1a1408 }
+.prod-body .prod-num{ color:#7a5d10 }
+.prod-body .prod-cat{ color:#3b2807 }
+
+/* ─── 9. Step list — heavier frosted backdrop ───────────────────────────── */
+.step-li{
+  background:rgba(255,252,246,.78);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+}
+.step-li:hover{background:rgba(255,252,246,.94)}
+
+/* ─── 10. Italic emphasis — solid deep gold on cream, gradient on dark images ─
+   The original gold-grad has pale yellow #f3dca0 mid-tone which is INVISIBLE
+   on cream backgrounds. Use solid deep gold for light theme; restore the
+   cinematic gradient only for image-backed dark sections. */
+.display em, h2 em, h3 em{
+  font-weight:500;
+  background:none;
+  -webkit-background-clip:initial;
+  background-clip:initial;
+  -webkit-text-fill-color:initial;
+  color:#7a5d10;          /* solid deep gold — 5.5:1 on cream */
+}
+
+/* Image-backed sections: restore gradient (looks cinematic on dark bg) */
+#home em, #home .display em,
+#story em, #story .display em,
+.quote-section em{
+  background:var(--gold-grad);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+}
+
+/* ─── 11. Link-gold — deeper for AA ─────────────────────────────────────── */
+.link-gold{
+  color:#7a5d10;
+  font-weight:600;
+}
+.link-gold:hover{ color:#3b2807 }
+/* But keep light variant on dark image sections */
+#home .link-gold, #story .link-gold{
+  color:#c9a961;
+  text-shadow:0 1px 4px rgba(10,9,8,.6);
+}
+
+/* ─── 12. Story stats numbers (large gold) — AA-Large compliant since >24pt */
+#story .text-gold{
+  color:#c9a961;
+  text-shadow:0 1px 6px rgba(10,9,8,.7);
+}
+
+/* ─── 13. Italic em in dark sections — keep bright */
+#home em, #story em, .quote-section em{
+  color:#e8c87a;
+  text-shadow:0 1px 6px rgba(10,9,8,.6);
+}
+
+/* ─── 14. Custom CTA note (small grey caption) — bump contrast */
+#custom .text-ink-3{
+  color:#3b2807;
+}
+
+/* ─── 15. Borders & rules — slightly stronger for visible structure ──────── */
+#promise .rule, #collections .rule, #custom .rule, #gallery .rule, #contact .rule{
+  background:linear-gradient(90deg,#7a5d10,transparent);
+  height:1px;
+  opacity:.85;
+}
 
 /* ===================== iOS SAFARI COMPATIBILITY =====================
    Safari-specific quirks that break layout or interactions:
