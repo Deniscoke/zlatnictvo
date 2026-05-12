@@ -419,7 +419,55 @@ h3{ font-size:1.15rem }
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.adm-tile button{
+
+/* Drag state */
+.adm-tile[draggable="true"]{ cursor:grab }
+.adm-tile.is-dragging{
+  opacity:.45;
+  cursor:grabbing;
+}
+.adm-tile.is-dragging *{ pointer-events:none }
+
+/* Drop target highlight when dragging over a different category grid */
+.adm-grid.is-drop-target{
+  outline:2px dashed var(--gold);
+  outline-offset:4px;
+  background:rgba(168,128,31,.06);
+  border-radius:4px;
+  transition:background .15s ease;
+}
+
+/* Per-tile move dropdown (top-left corner) */
+.adm-tile-move{
+  position:absolute;
+  top:.4rem; left:.4rem;
+  z-index:2;
+  font-family:inherit;
+  font-size:.7rem;
+  letter-spacing:.04em;
+  padding:.3rem 1.5rem .3rem .55rem;
+  border:1px solid var(--line-strong);
+  background:rgba(253,250,242,.92);
+  color:var(--ink-2);
+  border-radius:3px;
+  cursor:pointer;
+  max-width:55%;
+  -webkit-appearance:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='7'><path d='M1 1l4 4 4-4' fill='none' stroke='%237a5d10' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right .4rem center;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.adm-tile:hover .adm-tile-move,
+.adm-tile:focus-within .adm-tile-move{ opacity:1 }
+/* On touch devices (no hover), always show */
+@media (hover: none) {
+  .adm-tile-move{ opacity:1 }
+}
+
+.adm-tile-del{
   position:absolute;
   top:.4rem; right:.4rem;
   width:36px; height:36px;
@@ -434,7 +482,7 @@ h3{ font-size:1.15rem }
   appearance:none;
   padding:0;
 }
-.adm-tile button:hover{
+.adm-tile-del:hover{
   background:var(--danger);
   color:#fff;
   transform:scale(1.05);

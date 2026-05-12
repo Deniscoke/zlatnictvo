@@ -237,14 +237,21 @@ window.adminPhotosPromise = adminPhotosPromise;
   adminPhotosPromise.then(({ byCategory }) => {
     const cats = byCategory || {};
 
-    // ── Gallery: prepend admin uploads to the static mosaic ────────────────
+    // ── Gallery: REPLACE static tiles with admin uploads (full control) ────
+    // Static tiles are kept in HTML as fallback for empty state. When admin
+    // has uploaded ANY photo to gallery, statics are removed entirely so the
+    // admin sees only their own curation.
     const galleryGrid = document.querySelector('#gallery .grid');
     const galPhotos = cats.gallery || [];
     if(galleryGrid && galPhotos.length){
+      // Wipe the static tiles
+      galleryGrid.innerHTML = '';
+      // Render admin tiles
       const frag = document.createDocumentFragment();
       galPhotos.forEach(p => {
         const fig = document.createElement('figure');
         fig.className = 'tile aspect-square';
+        fig.dataset.adminPhoto = '1';
         const img = document.createElement('img');
         img.src = p.url;
         img.alt = p.title || '';
@@ -253,19 +260,22 @@ window.adminPhotosPromise = adminPhotosPromise;
         fig.appendChild(img);
         frag.appendChild(fig);
       });
-      galleryGrid.prepend(frag);
+      galleryGrid.appendChild(frag);
     }
 
-    // ── Collections: append product cards ──────────────────────────────────
+    // ── Collections: REPLACE static cards with admin uploads ──────────────
     const collectionsGrid = document.querySelector('#collections .grid');
     const colPhotos = cats.collections || [];
     if(collectionsGrid && colPhotos.length){
+      // Wipe the static curated cards
+      collectionsGrid.innerHTML = '';
       const frag = document.createDocumentFragment();
       colPhotos.forEach((p, i) => {
         const article = document.createElement('article');
         article.className = 'card-prod';
+        article.dataset.adminPhoto = '1';
         const safeTitle = (p.title || 'Yeni Parça').replace(/"/g, '&quot;');
-        const num = String(7 + i).padStart(2, '0');
+        const num = String(i + 1).padStart(2, '0');
         article.innerHTML = `
           <a class="prod-link block group" href="#" data-lightbox="user.${i}"
              data-img="${p.url}" data-title="${safeTitle}">
@@ -277,7 +287,7 @@ window.adminPhotosPromise = adminPhotosPromise;
             <div class="prod-body">
               <p class="prod-num">N°${num}</p>
               <h3 class="font-serif text-2xl text-ink mb-1">${safeTitle}</h3>
-              <p class="prod-cat">Yeni Koleksiyon</p>
+              <p class="prod-cat">Koleksiyon</p>
               <span class="link-gold mt-3 inline-block">Detayları Gör →</span>
             </div>
           </a>

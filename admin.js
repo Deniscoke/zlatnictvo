@@ -173,11 +173,25 @@ function renderGrid(grid, photos, emptyMsg) {
     grid.innerHTML = `<li class="adm-empty">${escapeHtml(emptyMsg)}</li>`;
     return;
   }
+  // Build "Move to..." dropdown options (excluding current category)
+  const currentCat = grid.dataset.grid;
+  const moveOpts = Object.entries(CATEGORY_META)
+    .filter(([cat]) => cat !== currentCat)
+    .map(([cat, m]) => `<option value="${cat}">→ ${escapeHtml(m.label)}</option>`)
+    .join('');
+
   grid.innerHTML = photos.map(p => `
-    <li class="adm-tile" data-url="${escapeAttr(p.url)}">
+    <li class="adm-tile" draggable="true"
+        data-url="${escapeAttr(p.url)}"
+        data-cat="${escapeAttr(currentCat)}"
+        data-title="${escapeAttr(p.title || '')}">
       <img src="${escapeAttr(p.url)}" alt="${escapeAttr(p.title || '')}" loading="lazy" />
       ${p.title ? `<span class="adm-tile-label">${escapeHtml(p.title)}</span>` : ''}
-      <button type="button" aria-label="Sil" data-del="${escapeAttr(p.url)}">
+      <select class="adm-tile-move" aria-label="Başka bölüme taşı">
+        <option value="">Taşı…</option>
+        ${moveOpts}
+      </select>
+      <button type="button" class="adm-tile-del" aria-label="Sil" data-del="${escapeAttr(p.url)}">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
@@ -187,8 +201,6 @@ function renderGrid(grid, photos, emptyMsg) {
 }
 
 // ── Delete (event delegation across ALL category grids) ───────────────────
-// Listening on document means we don't need to bind per-grid;
-// works for any future grids too.
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-del]');
   if (!btn) return;
@@ -198,6 +210,119 @@ document.addEventListener('click', (e) => {
   };
   confirmModal.hidden = false;
 });
+
+// ── Move via per-tile select dropdown (mobile-friendly alternative to drag) ─
+document.addEventListener('change', async (e) => {
+  const sel = e.target.closest('.adm-tile-move');
+  if (!sel || !sel.value) return;
+  const tile = sel.closest('.adm-tile');
+  const newCat = sel.value;
+  sel.value = ''; // reset immediately so user can see selection cleared
+  await moveOne(tile, newCat);
+});
+
+// ── Drag-and-drop between grids (desktop) ─────────────────────────────────
+// On dragstart we stash the source URL + tile reference. Each grid is a
+// drop zone — drop triggers the same moveOne() used by the select fallback.
+let dragSource = null;
+
+document.addEventListener('dragstart', (e) => {
+  const tile = e.target.closest('.adm-tile[draggable="true"]');
+  if (!tile) return;
+  dragSource = tile;
+  e.dataTransfer.effectAllowed = 'move';
+  // Some browsers require setData to be called for drag to work
+  e.dataTransfer.setData('text/plain', tile.dataset.url || '');
+  tile.classList.add('is-dragging');
+});
+
+document.addEventListener('dragend', (e) => {
+  const tile = e.target.closest('.adm-tile');
+  if (tile) tile.classList.remove('is-dragging');
+  document.querySelectorAll('.adm-grid.is-drop-target')
+    .forEach(g => g.classList.remove('is-drop-target'));
+  dragSource = null;
+});
+
+// Use bubbling drag events on document; identify the target grid via closest
+document.addEventListener('dragover', (e) => {
+  const grid = e.target.closest('.adm-grid[data-grid]');
+  if (!grid || !dragSource) return;
+  // Only highlight if it's a DIFFERENT category than the source
+  if (grid.dataset.grid === dragSource.dataset.cat) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  grid.classList.add('is-drop-target');
+});
+
+document.addEventListener('dragleave', (e) => {
+  const grid = e.target.closest('.adm-grid[data-grid]');
+  if (!grid) return;
+  // Only remove highlight when leaving the grid entirely (not when moving over child tiles)
+  if (!grid.contains(e.relatedTarget)) {
+    grid.classList.remove('is-drop-target');
+  }
+});
+
+document.addEventListener('drop', async (e) => {
+  const grid = e.target.closest('.adm-grid[data-grid]');
+  if (!grid || !dragSource) return;
+  e.preventDefault();
+  grid.classList.remove('is-drop-target');
+  const newCat = grid.dataset.grid;
+  if (newCat === dragSource.dataset.cat) return; // dropped on same grid
+  await moveOne(dragSource, newCat);
+});
+
+// ── Shared move helper (used by both drag-drop and select dropdown) ───────
+async function moveOne(tile, newCat) {
+  if (!tile || !newCat) return;
+  const meta = CATEGORY_META[newCat];
+  if (!meta) return;
+
+  // Determine title — keep existing if present, otherwise prompt for collections
+  let title = tile.dataset.title || '';
+  if (meta.needsTitle && !title) {
+    title = prompt(`${meta.label} için başlık girin:`)?.trim() || '';
+    if (!title) return; // user cancelled
+  }
+  if (!meta.needsTitle) title = '';
+
+  // Visual feedback: dim the tile while the move is in progress
+  tile.style.opacity = '0.45';
+  tile.style.pointerEvents = 'none';
+
+  try {
+    const params = new URLSearchParams({
+      url: tile.dataset.url,
+      category: newCat,
+      title: encodeURIComponent(title)
+    });
+    const res = await fetch(`/api/photos?${params}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${getPwd() || ''}` }
+    });
+
+    if (res.status === 401) {
+      clearPwd();
+      showLogin();
+      setStatus(loginStatus, 'Oturum süresi doldu. Tekrar giriş yapın.', 'error');
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'move-failed');
+    }
+
+    // Success — refresh grids
+    loadGallery();
+  } catch (err) {
+    alert(`Taşıma başarısız: ${err.message || err}`);
+    tile.style.opacity = '';
+    tile.style.pointerEvents = '';
+  }
+}
 
 confirmCanc.addEventListener('click', () => {
   pendingDelete = null;

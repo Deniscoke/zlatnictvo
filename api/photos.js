@@ -212,6 +212,77 @@ export default async function handler(req, res) {
       });
     }
 
+    // ─── PATCH: move a photo to a different category (auth required) ─────
+    // Implementation: Blob has no native rename — we download bytes, upload
+    // to new pathname, then delete the source. Acceptable for admin-only
+    // infrequent operations (one round-trip per move).
+    //   PATCH /api/photos?url=<oldUrl>&category=<newCat>&title=<optionalTitle>
+    if (req.method === 'PATCH') {
+      if (!isAuthed(req)) {
+        return res.status(401).json({ ok: false, error: 'Unauthorized' });
+      }
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        return res.status(500).json({ ok: false, error: 'Blob storage not configured' });
+      }
+
+      const oldUrl = req.query?.url;
+      const newCat = req.query?.category;
+      if (!oldUrl || typeof oldUrl !== 'string') {
+        return res.status(400).json({ ok: false, error: 'Missing ?url=' });
+      }
+      if (!newCat || !ALLOWED_CATEGORIES.has(newCat)) {
+        return res.status(400).json({ ok: false, error: `Invalid category: ${newCat}` });
+      }
+
+      // Sanity: confirm source is in our store
+      const listing = await list({});
+      const source = listing.blobs.find(b => b.url === oldUrl);
+      if (!source) {
+        return res.status(404).json({ ok: false, error: 'Source blob not found' });
+      }
+
+      // Optional title from query (URL-encoded)
+      let titleRaw = '';
+      try { titleRaw = decodeURIComponent(String(req.query?.title || '')).trim(); }
+      catch { titleRaw = String(req.query?.title || '').trim(); }
+
+      // Fetch source bytes
+      const fetchRes = await fetch(oldUrl);
+      if (!fetchRes.ok) {
+        return res.status(502).json({ ok: false, error: 'Could not read source bytes' });
+      }
+      const contentType = fetchRes.headers.get('content-type') || 'image/jpeg';
+      const buf = Buffer.from(await fetchRes.arrayBuffer());
+
+      // Construct new pathname based on target category + optional title
+      const ext = contentType === 'image/png' ? 'png'
+                : contentType === 'image/webp' ? 'webp'
+                : 'jpg';
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const titleSlug = slugify(titleRaw);
+      const stem = titleSlug ? `${id}__${titleSlug}` : id;
+      const pathname = `${newCat}/${stem}.${ext}`;
+
+      const newBlob = await put(pathname, buf, {
+        access: 'public',
+        contentType,
+        addRandomSuffix: false
+      });
+
+      // Delete source — fail silently if it doesn't go through; the listing
+      // will show two copies until next cleanup, but the move was successful
+      try { await del(oldUrl); } catch {}
+
+      return res.status(200).json({
+        ok: true,
+        url: newBlob.url,
+        pathname: newBlob.pathname,
+        category: newCat,
+        title: titleRaw,
+        movedFrom: source.pathname
+      });
+    }
+
     // ─── DELETE: remove by URL (auth required) ───────────────────────────
     if (req.method === 'DELETE') {
       if (!isAuthed(req)) {
