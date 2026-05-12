@@ -65,8 +65,12 @@
         <label class="adm-label">
           <span>Bölüm</span>
           <select id="categorySelect">
-            <option value="gallery">Galeri (yaşam fotoğrafları)</option>
-            <option value="collections">Koleksiyonlar (ürün kartları)</option>
+            <option value="gallery">Galeri — yaşam / atölye fotoğrafları (sınırsız)</option>
+            <option value="collections">Koleksiyonlar — ürün kartı (başlık gerekir)</option>
+            <option value="hero">Ana Slider — üst sayfa (en yeni 4 fotoğraf döner)</option>
+            <option value="story">Atölye Hikâyesi — usta fotoğrafı (en yeni 1)</option>
+            <option value="trust">Güven Bölümü — butik / hizmet / paket (en yeni 3)</option>
+            <option value="banner">Banner — alt yaşam bölümü (en yeni 1)</option>
           </select>
         </label>
         <label class="adm-label" id="titleLabel" hidden>
@@ -74,6 +78,7 @@
           <input type="text" id="titleInput" placeholder="Örn: Hilal Kolye" maxlength="60" />
         </label>
       </div>
+      <p class="adm-hint" id="categoryHint"></p>
 
       <label class="adm-drop" id="dropZone">
         <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden />
@@ -89,7 +94,7 @@
       <ul id="uploadQueue" class="adm-queue"></ul>
     </div>
 
-    <!-- Existing photos grid (split by category) -->
+    <!-- Existing photos — one grid per category -->
     <div class="adm-card">
       <div class="adm-card-head">
         <h2>Mevcut Fotoğraflar</h2>
@@ -97,11 +102,23 @@
       </div>
       <p id="galleryStatus" class="adm-muted">Yükleniyor…</p>
 
-      <h3 class="adm-section-title">Galeri</h3>
-      <ul id="galleryGrid" class="adm-grid"></ul>
+      <h3 class="adm-section-title">Galeri <span class="adm-slot-info" data-slot="gallery"></span></h3>
+      <ul class="adm-grid" data-grid="gallery"></ul>
 
-      <h3 class="adm-section-title">Koleksiyonlar</h3>
-      <ul id="collectionsGrid" class="adm-grid"></ul>
+      <h3 class="adm-section-title">Koleksiyonlar <span class="adm-slot-info" data-slot="collections"></span></h3>
+      <ul class="adm-grid" data-grid="collections"></ul>
+
+      <h3 class="adm-section-title">Ana Slider (Hero) <span class="adm-slot-info" data-slot="hero"></span></h3>
+      <ul class="adm-grid" data-grid="hero"></ul>
+
+      <h3 class="adm-section-title">Atölye Hikâyesi <span class="adm-slot-info" data-slot="story"></span></h3>
+      <ul class="adm-grid" data-grid="story"></ul>
+
+      <h3 class="adm-section-title">Güven Bölümü <span class="adm-slot-info" data-slot="trust"></span></h3>
+      <ul class="adm-grid" data-grid="trust"></ul>
+
+      <h3 class="adm-section-title">Banner <span class="adm-slot-info" data-slot="banner"></span></h3>
+      <ul class="adm-grid" data-grid="banner"></ul>
     </div>
 
   </section>

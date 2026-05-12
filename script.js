@@ -218,70 +218,92 @@ const io = new IntersectionObserver((entries)=>{
 },{threshold:.1, rootMargin:'0px 0px -6% 0px'});
 revealEls.forEach(el => io.observe(el));
 
+/* ---------- ADMIN PHOTOS — single fetch shared by all dynamic sections ----
+   Returns a Promise that resolves with { byCategory }. Every section
+   (gallery, collections, hero, story, trust, banner) consumes the same
+   resolved data — one round-trip per page load.
+   Exposed on window so bootHeroSlider can await it before initialising. */
+const adminPhotosPromise = fetch('/api/photos', { cache:'no-store' })
+  .then(r => r.ok ? r.json() : { byCategory:{} })
+  .catch(() => ({ byCategory:{} }));
+window.adminPhotosPromise = adminPhotosPromise;
+
 /* ---------- DYNAMIC SECTIONS (admin-uploaded photos) ----------
-   Single fetch returns photos grouped by category. We then:
-   - prepend "gallery" photos to the gallery tile grid
-   - append "collections" photos as additional product cards
-   Fails silently if API is unreachable — static curated content stays. */
+   Gallery & Collections = append-style (added to existing static content).
+   Story, Trust, Banner = fixed-slot replacements (swap src on existing
+   <img data-cms="..."> elements). Hero is handled separately via the
+   adminPhotosPromise in bootHeroSlider, so the WebGL textures load correctly. */
 (function bootDynamicContent(){
-  const galleryGrid     = document.querySelector('#gallery .grid');
-  const collectionsGrid = document.querySelector('#collections .grid');
-  if(!galleryGrid && !collectionsGrid) return;
+  adminPhotosPromise.then(({ byCategory }) => {
+    const cats = byCategory || {};
 
-  fetch('/api/photos', { cache:'no-store' })
-    .then(r => r.ok ? r.json() : { byCategory:{ gallery:[], collections:[] } })
-    .then(({ byCategory }) => {
-      const galPhotos = byCategory?.gallery || [];
-      const colPhotos = byCategory?.collections || [];
+    // ── Gallery: prepend admin uploads to the static mosaic ────────────────
+    const galleryGrid = document.querySelector('#gallery .grid');
+    const galPhotos = cats.gallery || [];
+    if(galleryGrid && galPhotos.length){
+      const frag = document.createDocumentFragment();
+      galPhotos.forEach(p => {
+        const fig = document.createElement('figure');
+        fig.className = 'tile aspect-square';
+        const img = document.createElement('img');
+        img.src = p.url;
+        img.alt = p.title || '';
+        img.loading = 'lazy';
+        img.className = 'tile-img';
+        fig.appendChild(img);
+        frag.appendChild(fig);
+      });
+      galleryGrid.prepend(frag);
+    }
 
-      // Gallery: prepend simple square tiles
-      if(galleryGrid && galPhotos.length){
-        const frag = document.createDocumentFragment();
-        galPhotos.forEach(p => {
-          const fig = document.createElement('figure');
-          fig.className = 'tile aspect-square';
-          const img = document.createElement('img');
-          img.src = p.url;
-          img.alt = p.title || '';
-          img.loading = 'lazy';
-          img.className = 'tile-img';
-          fig.appendChild(img);
-          frag.appendChild(fig);
-        });
-        galleryGrid.prepend(frag);
-      }
+    // ── Collections: append product cards ──────────────────────────────────
+    const collectionsGrid = document.querySelector('#collections .grid');
+    const colPhotos = cats.collections || [];
+    if(collectionsGrid && colPhotos.length){
+      const frag = document.createDocumentFragment();
+      colPhotos.forEach((p, i) => {
+        const article = document.createElement('article');
+        article.className = 'card-prod';
+        const safeTitle = (p.title || 'Yeni Parça').replace(/"/g, '&quot;');
+        const num = String(7 + i).padStart(2, '0');
+        article.innerHTML = `
+          <a class="prod-link block group" href="#" data-lightbox="user.${i}"
+             data-img="${p.url}" data-title="${safeTitle}">
+            <div class="prod-media h-[220px] sm:h-[360px]">
+              <img src="${p.url}" alt="${safeTitle}" loading="lazy"
+                   class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
+              <div class="prod-shimmer"></div>
+            </div>
+            <div class="prod-body">
+              <p class="prod-num">N°${num}</p>
+              <h3 class="font-serif text-2xl text-ink mb-1">${safeTitle}</h3>
+              <p class="prod-cat">Yeni Koleksiyon</p>
+              <span class="link-gold mt-3 inline-block">Detayları Gör →</span>
+            </div>
+          </a>
+        `;
+        frag.appendChild(article);
+      });
+      collectionsGrid.appendChild(frag);
+    }
 
-      // Collections: append product cards (same structure as static cards)
-      if(collectionsGrid && colPhotos.length){
-        const frag = document.createDocumentFragment();
-        colPhotos.forEach((p, i) => {
-          const article = document.createElement('article');
-          article.className = 'card-prod';
-          // Use anchor + lightbox dataset so click opens the lightbox just like curated cards
-          const safeTitle = (p.title || 'Yeni Parça').replace(/"/g, '&quot;');
-          const num = String(7 + i).padStart(2, '0'); // continues numbering after curated 06
-          article.innerHTML = `
-            <a class="prod-link block group" href="#" data-lightbox="user.${i}"
-               data-img="${p.url}" data-title="${safeTitle}">
-              <div class="prod-media h-[220px] sm:h-[360px]">
-                <img src="${p.url}" alt="${safeTitle}" loading="lazy"
-                     class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
-                <div class="prod-shimmer"></div>
-              </div>
-              <div class="prod-body">
-                <p class="prod-num">N°${num}</p>
-                <h3 class="font-serif text-2xl text-ink mb-1">${safeTitle}</h3>
-                <p class="prod-cat">Yeni Koleksiyon</p>
-                <span class="link-gold mt-3 inline-block">Detayları Gör →</span>
-              </div>
-            </a>
-          `;
-          frag.appendChild(article);
-        });
-        collectionsGrid.appendChild(frag);
-      }
-    })
-    .catch(()=>{ /* silent — static defaults stay visible */ });
+    // ── Story: swap craft-hands.webp src with latest uploaded story photo ──
+    const storyImg = document.querySelector('[data-cms="story"]');
+    const storyPhotos = cats.story || [];
+    if(storyImg && storyPhotos[0]) storyImg.src = storyPhotos[0].url;
+
+    // ── Trust: replace each slot 0..2 with most recent trust uploads ───────
+    const trustPhotos = cats.trust || [];
+    trustPhotos.slice(0, 3).forEach((p, i) => {
+      const target = document.querySelector(`[data-cms="trust"][data-trust-slot="${i}"]`);
+      if(target) target.src = p.url;
+    });
+
+    // ── Banner: swap lifestyle-couple.webp src with latest banner upload ───
+    const bannerImg = document.querySelector('[data-cms="banner"]');
+    const bannerPhotos = cats.banner || [];
+    if(bannerImg && bannerPhotos[0]) bannerImg.src = bannerPhotos[0].url;
+  });
 })();
 
 /* ---------- FORM → EMAIL (Web3Forms) ---------- */
@@ -528,21 +550,51 @@ function bootHeroSlider(){
   });
 }
 
-// Three.js / GSAP / imagesLoaded are synchronous scripts loaded just before this file,
-// so they are already available. Call immediately, or fall back to window.load as a
-// safety net in case the browser hasn't executed the preceding scripts yet.
-if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesLoaded !== 'undefined'){
+// ── Hero slider boot order ──────────────────────────────────────────────
+// 1. Wait for adminPhotosPromise → swap .slider-src image srcs if any
+//    "hero" uploads exist (most recent 4 replace the static defaults)
+// 2. Then init the WebGL slider which now picks up the new sources
+async function bootHeroSliderWithUploads(){
+  try {
+    const { byCategory } = await adminPhotosPromise;
+    const heroPhotos = (byCategory?.hero || []).slice(0, 4);
+    if(heroPhotos.length){
+      heroPhotos.forEach((p, i) => {
+        const img = document.querySelector(`.slider-src[data-slide="${i}"]`);
+        if(img) img.src = p.url;
+      });
+    }
+  } catch {/* fall back to static defaults */}
   bootHeroSlider();
-}else{
-  window.addEventListener('load', bootHeroSlider);
 }
 
-/* ===================== INTRO OVERLAY (Kintsugi marble) ===================== */
+// Three.js / GSAP / imagesLoaded are synchronous scripts loaded just before this file.
+// Wait either way for the photos promise — it usually resolves in <100ms anyway.
+if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesLoaded !== 'undefined'){
+  bootHeroSliderWithUploads();
+}else{
+  window.addEventListener('load', bootHeroSliderWithUploads);
+}
+
+/* ===================== INTRO OVERLAY (Kintsugi marble) =====================
+   Shows the kintsugi animation once per browser tab/session. On reload or
+   second-page-view within the same session it skips instantly so returning
+   visitors don't sit through 2.5s of branding on every interaction. */
 (function bootIntro(){
   const intro = document.getElementById('intro');
   if(!intro) return;
 
+  const SEEN_KEY = 'altun.intro.seen';
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Already seen this tab session → remove without animation.
+  let alreadySeen = false;
+  try { alreadySeen = sessionStorage.getItem(SEEN_KEY) === '1'; } catch {}
+  if(alreadySeen || REDUCED){
+    intro.remove();
+    return;
+  }
+
   let dismissed = false;
 
   // Safari fix: getTotalLength() is more reliable than pathLength="1"
@@ -557,12 +609,13 @@ if(typeof THREE !== 'undefined' && typeof gsap !== 'undefined' && typeof imagesL
   const dismiss = ()=>{
     if(dismissed) return;
     dismissed = true;
+    try { sessionStorage.setItem(SEEN_KEY, '1'); } catch {}
     intro.classList.add('is-leaving');
     setTimeout(()=>{ intro.remove(); }, 900);
   };
 
-  // Auto-dismiss after 4 s (or instantly on reduced-motion)
-  setTimeout(dismiss, REDUCED ? 100 : 4000);
+  // Kintsugi cracks finish drawing around 2.4s; auto-dismiss right after.
+  setTimeout(dismiss, 2500);
 
   // Skip button — simple click/touch, no complexity
   const skipBtn = intro.querySelector('.intro-skip');

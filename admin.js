@@ -9,6 +9,23 @@
 
 const SESSION_KEY = 'altun.admin.pwd';
 
+// Per-category metadata: display name, slot limit (Infinity = unlimited),
+// whether title input is required, and a hint string shown under the dropdown.
+const CATEGORY_META = {
+  gallery:     { label: 'Galeri',           limit: Infinity, needsTitle: false,
+                 hint: 'Yaşam ve atölye fotoğrafları. Sınırsız — yeni fotoğraflar galerinin başına eklenir.' },
+  collections: { label: 'Koleksiyonlar',    limit: Infinity, needsTitle: true,
+                 hint: 'Ürün kartı olarak eklenir. Başlık (örn. "Hilal Kolye") site üzerinde görünür.' },
+  hero:        { label: 'Ana Slider',       limit: 4,        needsTitle: false,
+                 hint: 'Üst sayfa slider — en yeni 4 fotoğraf statik fotoğrafları değiştirir. 4\'ten fazla yüklerseniz, en eskileri silin.' },
+  story:       { label: 'Atölye Hikâyesi',  limit: 1,        needsTitle: false,
+                 hint: 'Atölye hikâye bölümünde gösterilen tek usta fotoğrafı. En son yüklenen kullanılır.' },
+  trust:       { label: 'Güven Bölümü',     limit: 3,        needsTitle: false,
+                 hint: 'Butik / hizmet / paket — 3 fotoğraflık ızgara. En yeni 3 fotoğraf kullanılır.' },
+  banner:      { label: 'Banner',           limit: 1,        needsTitle: false,
+                 hint: 'Alıntı bölümünün arkasındaki büyük yaşam fotoğrafı. En son yüklenen kullanılır.' }
+};
+
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const loginView      = document.getElementById('loginView');
 const galleryView    = document.getElementById('galleryView');
@@ -24,9 +41,8 @@ const uploadQueue    = document.getElementById('uploadQueue');
 const categorySelect = document.getElementById('categorySelect');
 const titleLabel     = document.getElementById('titleLabel');
 const titleInput     = document.getElementById('titleInput');
+const categoryHint   = document.getElementById('categoryHint');
 
-const galleryGrid    = document.getElementById('galleryGrid');
-const collectionsGrid= document.getElementById('collectionsGrid');
 const galleryStat    = document.getElementById('galleryStatus');
 const refreshBtn     = document.getElementById('refreshBtn');
 
@@ -62,13 +78,14 @@ const showGallery = () => {
   loadGallery();
 };
 
-// ── Title field visibility — only shown for "collections" category ────────
-function syncTitleVisibility() {
-  const isCollections = categorySelect.value === 'collections';
-  titleLabel.hidden = !isCollections;
-  if (!isCollections) titleInput.value = '';
+// ── Sync UI when category changes — show/hide title field, update hint ───
+function syncCategoryUI() {
+  const meta = CATEGORY_META[categorySelect.value] || CATEGORY_META.gallery;
+  titleLabel.hidden = !meta.needsTitle;
+  if (!meta.needsTitle) titleInput.value = '';
+  if (categoryHint) categoryHint.textContent = meta.hint || '';
 }
-categorySelect.addEventListener('change', syncTitleVisibility);
+categorySelect.addEventListener('change', syncCategoryUI);
 
 // ── Login ──────────────────────────────────────────────────────────────────
 loginForm.addEventListener('submit', async (e) => {
@@ -107,24 +124,45 @@ logoutBtn.addEventListener('click', () => {
   showLogin();
 });
 
-// ── Gallery list — load both categories and split into two grids ──────────
+// ── Gallery list — load all categories and render one grid per section ───
 async function loadGallery() {
   setStatus(galleryStat, 'Yükleniyor…');
-  galleryGrid.innerHTML = '';
-  collectionsGrid.innerHTML = '';
+  // Clear all grids
+  document.querySelectorAll('[data-grid]').forEach(g => g.innerHTML = '');
 
   try {
     const res = await fetch('/api/photos', { cache: 'no-store' });
     if (!res.ok) throw new Error('list-failed');
     const { byCategory } = await res.json();
 
-    const galPhotos = byCategory?.gallery || [];
-    const colPhotos = byCategory?.collections || [];
+    let total = 0;
+    for (const [cat, meta] of Object.entries(CATEGORY_META)) {
+      const photos = byCategory?.[cat] || [];
+      total += photos.length;
 
-    renderGrid(galleryGrid,    galPhotos, 'Henüz galeri fotoğrafı yok.');
-    renderGrid(collectionsGrid, colPhotos, 'Henüz koleksiyon parçası yok.');
+      // Render grid for this category
+      const grid = document.querySelector(`[data-grid="${cat}"]`);
+      if (grid) renderGrid(grid, photos, `Henüz ${meta.label.toLowerCase()} fotoğrafı yok.`);
 
-    setStatus(galleryStat, `${galPhotos.length + colPhotos.length} toplam fotoğraf`);
+      // Render slot info badge (e.g. "2 / 4 kullanılıyor")
+      const slotInfo = document.querySelector(`[data-slot="${cat}"]`);
+      if (slotInfo) {
+        if (meta.limit === Infinity) {
+          slotInfo.textContent = `${photos.length} fotoğraf`;
+          slotInfo.className = 'adm-slot-info';
+        } else {
+          const used = Math.min(photos.length, meta.limit);
+          const extra = photos.length - meta.limit;
+          slotInfo.textContent = `${used} / ${meta.limit} kullanılıyor`
+            + (extra > 0 ? ` (+${extra} kullanılmıyor)` : '');
+          slotInfo.className = 'adm-slot-info'
+            + (photos.length >= meta.limit ? ' is-full' : '')
+            + (extra > 0 ? ' is-over' : '');
+        }
+      }
+    }
+
+    setStatus(galleryStat, `${total} toplam fotoğraf`);
   } catch (err) {
     setStatus(galleryStat, 'Galeri yüklenemedi', 'error');
   }
@@ -148,8 +186,10 @@ function renderGrid(grid, photos, emptyMsg) {
   `).join('');
 }
 
-// ── Delete (event delegation across both grids) ───────────────────────────
-function handleDeleteClick(e) {
+// ── Delete (event delegation across ALL category grids) ───────────────────
+// Listening on document means we don't need to bind per-grid;
+// works for any future grids too.
+document.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-del]');
   if (!btn) return;
   pendingDelete = {
@@ -157,9 +197,7 @@ function handleDeleteClick(e) {
     tile: btn.closest('.adm-tile')
   };
   confirmModal.hidden = false;
-}
-galleryGrid.addEventListener('click', handleDeleteClick);
-collectionsGrid.addEventListener('click', handleDeleteClick);
+});
 
 confirmCanc.addEventListener('click', () => {
   pendingDelete = null;
@@ -217,11 +255,12 @@ fileInput.addEventListener('change', (e) => {
 });
 
 async function handleFiles(fileList) {
-  // Validate: collections category requires a title
   const category = categorySelect.value;
+  const meta = CATEGORY_META[category] || CATEGORY_META.gallery;
   const title = titleInput.value.trim();
-  if (category === 'collections' && !title) {
-    alert('Koleksiyon fotoğrafı için lütfen bir başlık girin.');
+
+  if (meta.needsTitle && !title) {
+    alert(`${meta.label} için lütfen bir başlık girin.`);
     titleInput.focus();
     return;
   }
@@ -233,16 +272,15 @@ async function handleFiles(fileList) {
     await uploadOne(file, li, category, title);
   }
   loadGallery();
-  // Auto-clear title after upload so next upload doesn't reuse
-  if (category === 'collections') titleInput.value = '';
+  if (meta.needsTitle) titleInput.value = '';
 }
 
 function createQueueItem(file, category, title) {
+  const meta = CATEGORY_META[category] || CATEGORY_META.gallery;
   const li = document.createElement('li');
-  const catLabel = category === 'collections' ? 'Koleksiyon' : 'Galeri';
   const displayName = title ? `${title} (${file.name})` : file.name;
   li.innerHTML = `
-    <span class="cat-badge">${escapeHtml(catLabel)}</span>
+    <span class="cat-badge">${escapeHtml(meta.label)}</span>
     <span class="name">${escapeHtml(displayName)}</span>
     <span class="state">Bekliyor</span>
   `;
@@ -326,7 +364,7 @@ function escapeHtml(s) {
 function escapeAttr(s) { return escapeHtml(s); }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-syncTitleVisibility();
+syncCategoryUI();
 if (getPwd()) {
   showGallery();
 } else {

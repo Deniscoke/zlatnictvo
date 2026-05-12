@@ -1,0 +1,7 @@
+/* Tailwind input file — compiled by `npm run build` into tailwind.dist.css.
+   Project-specific styles still live in style.css; this file is purely the
+   Tailwind layer (utilities + base + components). Do not paste custom CSS
+   here — keep authoring custom rules in style.css. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

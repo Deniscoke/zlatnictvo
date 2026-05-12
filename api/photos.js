@@ -24,7 +24,14 @@ export const config = {
   api: { bodyParser: false }
 };
 
-const ALLOWED_CATEGORIES = new Set(['gallery', 'collections']);
+const ALLOWED_CATEGORIES = new Set([
+  'gallery',      // append-style mosaic of lifestyle/atelier shots
+  'collections',  // append-style product cards (requires title)
+  'hero',         // fixed-slot: 4 most recent replace WebGL slider images
+  'story',        // fixed-slot: 1 most recent replaces craft-hands.png
+  'trust',        // fixed-slot: 3 most recent replace boutique/service/packaging
+  'banner'        // fixed-slot: 1 most recent replaces lifestyle-couple.png
+]);
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB safe limit (Vercel function body cap is 4.5 MB)
 
@@ -107,7 +114,10 @@ export default async function handler(req, res) {
     // ─── GET ──────────────────────────────────────────────────────────────
     if (req.method === 'GET') {
       if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        return res.status(200).json({ photos: [], byCategory: { gallery: [], collections: [] } });
+        const emptyByCategory = Object.fromEntries(
+          [...ALLOWED_CATEGORIES].map(c => [c, []])
+        );
+        return res.status(200).json({ photos: [], byCategory: emptyByCategory });
       }
 
       const filterCat = (req.query?.category || '').toString();
@@ -132,8 +142,11 @@ export default async function handler(req, res) {
         ? photos.filter(p => p.category === filterCat)
         : photos;
 
-      // Also provide a grouped view for the admin panel
-      const byCategory = { gallery: [], collections: [] };
+      // Grouped view — initialise every allowed category so admin UI can
+      // render an empty section heading even when nothing is uploaded yet
+      const byCategory = Object.fromEntries(
+        [...ALLOWED_CATEGORIES].map(c => [c, []])
+      );
       for (const p of photos) {
         if (byCategory[p.category]) byCategory[p.category].push(p);
       }
@@ -208,13 +221,26 @@ export default async function handler(req, res) {
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ ok: false, error: 'Missing ?url=' });
       }
-      // Sanity check: refuse if URL doesn't look like one of our categories
-      const isOurs = [...ALLOWED_CATEGORIES].some(c => url.includes(`/${c}/`));
-      if (!isOurs) {
-        return res.status(400).json({ ok: false, error: 'Refused: not a managed URL' });
+
+      // Hardening: rather than trusting that the URL "looks like" ours via a
+      // substring check, confirm the blob actually exists in our store and its
+      // pathname starts with one of our managed category prefixes. This blocks
+      // forged URLs entirely (e.g. /gallery/-suffixed paths from another store).
+      const listing = await list({});
+      const target = listing.blobs.find(b => b.url === url);
+      if (!target) {
+        return res.status(404).json({ ok: false, error: 'Blob not found in this store' });
       }
+      const prefix = target.pathname.split('/')[0];
+      if (!ALLOWED_CATEGORIES.has(prefix)) {
+        return res.status(400).json({
+          ok: false,
+          error: `Refused: ${prefix} is not a managed category`
+        });
+      }
+
       await del(url);
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, deleted: target.pathname });
     }
 
     return res.status(405).json({ ok: false, error: 'Method not allowed' });

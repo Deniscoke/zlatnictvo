@@ -1,6 +1,31 @@
-# Altun Atelier — Admin Panel Setup
+# Altun Atelier — Admin Panel + Build Setup
 
 Admin panel umožňuje majiteľom uploadovať fotografie do galérie webu bez technických znalostí. Toto je jednorazový setup (cca 5 minút) ktorý urobíte v Vercel dashboarde.
+
+## Build proces (Vercel deploy)
+
+Web má jednoduchý build krok ktorý kompiluje Tailwind do statického CSS súboru.
+
+```
+npm install              # raz, pri prvom checkoute
+npm run build            # → tailwind.dist.css (~17 KB minified)
+npm run build:watch      # auto-rebuild pri zmene HTML/JS, pre lokálny vývoj
+npm run optimize:images  # konvertuje PNG → WebP (raz, alebo po pridaní novej fotky)
+npm run stamp:dims       # pridá width/height na <img> tagy z manifestu (idempotentné)
+```
+
+Vercel pri každom deploy spustí `npm run build` automaticky (definované v `vercel.json` ako `buildCommand`). Lokálne ti stačí `npm run build:watch` počas práce na HTML.
+
+### Pridanie novej statickej fotky do `images/`
+1. Hoď PNG/JPG do `zlatnictvo-site/images/`
+2. `npm run optimize:images` — vyrobí `.webp` verziu (94 % menšiu) a aktualizuje `manifest.json`
+3. V HTML referencuj `images/tvoja-fotka.webp`
+4. `npm run stamp:dims` — pridá `width`/`height` atribúty (zero CLS)
+5. Commit + push → Vercel deploy
+
+(Pre fotky uploadované cez admin panel toto nie je potrebné — admin panel ich ukladá do Vercel Blob a zobrazuje priamo URL.)
+
+---
 
 ## Čo potrebujete
 

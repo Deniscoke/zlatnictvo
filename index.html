@@ -12,44 +12,107 @@
 <meta name="description" data-i18n="meta.desc"
   content="1978'den bu yana üç kuşağın ustalığıyla tasarlanan, el yapımı altın mücevherler.">
 
-<meta property="og:title" content="Altun Atelier — Handcrafted Gold Jewelry">
-<meta property="og:description" content="Three generations of Turkish goldsmithing.">
-<meta property="og:image" content="images/collection-1-collar.png">
+<!-- Canonical + bilingual hreflang. The EN version currently shares the URL
+     and is toggled by ?lang=en — when EN moves to /en, update these accordingly. -->
+<link rel="canonical" href="https://altunatelier.com/">
+<link rel="alternate" hreflang="tr" href="https://altunatelier.com/">
+<link rel="alternate" hreflang="en" href="https://altunatelier.com/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://altunatelier.com/">
+
+<!-- Favicons + touch icons. SVG works in modern browsers; PNG fallback can be
+     generated from favicon.svg via squoosh/realfavicongenerator before launch. -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="mask-icon" href="/favicon.svg" color="#c9a961">
+
+<!-- Open Graph + Twitter Cards. Replace og:url + og:image with real domain
+     and a 1200×630 og-image.jpg before launch (see KLIENT-OTAZKY.md). -->
+<meta property="og:site_name" content="Altun Atelier">
+<meta property="og:title" content="Altun Atelier — Handcrafted Gold Jewelry · Istanbul">
+<meta property="og:description" content="Three generations of Turkish goldsmithing since 1978. Bespoke pieces, engagement rings and signature collections — each one made by hand.">
+<meta property="og:image" content="https://altunatelier.com/images/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Altun Atelier — handcrafted gold jewelry, Istanbul">
+<meta property="og:url" content="https://altunatelier.com/">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Altun Atelier — Handcrafted Gold Jewelry">
+<meta name="twitter:description" content="Three generations of Turkish goldsmithing since 1978.">
+<meta name="twitter:image" content="https://altunatelier.com/images/og-image.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<link rel="preload" as="image" href="images/collection-1-collar.png">
-<link rel="preload" as="image" href="images/craft-forge.png">
+<link rel="preload" as="image" href="images/collection-1-collar.webp">
+<link rel="preload" as="image" href="images/craft-forge.webp">
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  // LIGHT THEME PALETTE — WCAG AA compliant on cream backdrop
-  // ink-*  = text colors (all pass 4.5:1 contrast on #fdfaf2)
-  // onyx-* = surface colors (cream/warm-white tones)
-  // gold-* = accent colors (deeper for small-text legibility)
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          ink:    { DEFAULT:'#1a1408', 2:'#3b2807', 3:'#5a3f0e', 4:'#7a5d10' },
-          onyx:   { DEFAULT:'#fdfaf2', 2:'#f5ecd6', 3:'#fffbf2', 4:'#ede0bf' },
-          gold:   { DEFAULT:'#7a5d10', soft:'#a8801f', hi:'#c9a961', lo:'#3b2807' },
-          line:   'rgba(122,93,16,.28)',
-          line2:  'rgba(122,93,16,.14)',
-        },
-        fontFamily: {
-          serif: ['"Cormorant Garamond"','Georgia','serif'],
-          sans:  ['Inter','-apple-system','system-ui','sans-serif'],
-        },
-        letterSpacing: { 'kicker':'.32em', 'btn':'.22em' },
-      }
-    }
-  }
-</script>
+<!-- Tailwind: compiled once at build time → tailwind.dist.css (~17 KB minified).
+     Theme tokens live in tailwind.config.js. The previous CDN runtime
+     (cdn.tailwindcss.com, ~300 KB JIT JS) was production-disallowed by the
+     Tailwind team and added significant FOUC + render-blocking time. -->
+<link rel="stylesheet" href="tailwind.dist.css">
 <link rel="stylesheet" href="style.css">
+
+<!-- ============== STRUCTURED DATA (JSON-LD) ==============
+     Critical for local SEO and Google Maps Pack visibility. Replace the
+     __REPLACE__ placeholders with real values from the client (see
+     KLIENT-OTAZKY.md). The two-type @graph (JewelryStore + LocalBusiness)
+     covers both Google's "shop" rich result and Maps presence. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "JewelryStore",
+      "@id": "https://altunatelier.com/#store",
+      "name": "Altun Atelier",
+      "alternateName": "ALTUN atelier",
+      "description": "Three generations of Turkish goldsmithing since 1978. Bespoke pieces, engagement rings and signature collections — each one made by hand.",
+      "url": "https://altunatelier.com/",
+      "logo": "https://altunatelier.com/favicon.svg",
+      "image": [
+        "https://altunatelier.com/images/trust-boutique.webp",
+        "https://altunatelier.com/images/craft-hands.webp",
+        "https://altunatelier.com/images/collection-1-collar.webp"
+      ],
+      "telephone": "__REPLACE_PHONE__",
+      "email": "__REPLACE_EMAIL__",
+      "priceRange": "$$$",
+      "foundingDate": "1978",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "__REPLACE_STREET_ADDRESS__",
+        "addressLocality": "Fatih",
+        "addressRegion": "İstanbul",
+        "postalCode": "__REPLACE_POSTAL_CODE__",
+        "addressCountry": "TR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "__REPLACE_LAT__",
+        "longitude": "__REPLACE_LNG__"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        }
+      ],
+      "sameAs": [
+        "https://instagram.com/__REPLACE_IG_HANDLE__"
+      ],
+      "areaServed": { "@type": "Country", "name": "Turkey" },
+      "knowsLanguage": ["tr","en"]
+    }
+  ]
+}
+</script>
 </head>
 
 <body class="bg-onyx text-ink-2 font-sans antialiased">
@@ -186,14 +249,18 @@
 
   <!-- WebGL slider mount -->
   <div id="hero-slider" class="absolute inset-0 z-0">
-    <!-- These <img> elements load the textures, then become hidden once Three.js takes over -->
-    <img src="images/collection-1-collar.png" alt="" class="slider-src" data-slide="0" fetchpriority="high">
-    <img src="images/craft-forge.png"         alt="" class="slider-src" data-slide="1">
-    <img src="images/craft-hands.png"         alt="" class="slider-src" data-slide="2">
-    <img src="images/lifestyle-couple.png"    alt="" class="slider-src" data-slide="3">
-    <!-- Fallback for no-JS / failed WebGL: first image as background-image is rendered via CSS -->
+    <!-- These <img> elements load the textures, then become hidden once Three.js takes over.
+         Empty alt is intentional: when WebGL takes over they become decorative; the slide title
+         text below is the accessible label for the active slide. -->
+    <img src="images/collection-1-collar.webp" width="1024" height="1024" alt="" class="slider-src" data-slide="0" fetchpriority="high">
+    <img src="images/craft-forge.webp" width="1024" height="1024"         alt="" class="slider-src" data-slide="1">
+    <img src="images/craft-hands.webp" width="1024" height="1024"         alt="" class="slider-src" data-slide="2">
+    <img src="images/lifestyle-couple.webp" width="1024" height="1024"    alt="" class="slider-src" data-slide="3">
+    <!-- Fallback for no-JS / failed WebGL: first image as a real informative photo. -->
     <noscript>
-      <img src="images/collection-1-collar.png" alt="" class="absolute inset-0 w-full h-full object-cover">
+      <img src="images/collection-1-collar.webp" width="1024" height="1024"
+           alt="Altun Atelier — handcrafted gold collar necklace"
+           class="absolute inset-0 w-full h-full object-cover">
     </noscript>
   </div>
 
@@ -345,9 +412,11 @@
     <!-- Card 1: Statement collar (large dramatic) -->
     <article class="card-prod sm:col-span-2 lg:col-span-2 lg:row-span-2">
       <a class="prod-link block group" href="#" data-lightbox="col.p1"
-         data-img="images/collection-1-collar.png" data-i18n-title="col.p1.t" data-i18n-cat="col.p1.c">
+         data-img="images/collection-1-collar.webp" data-i18n-title="col.p1.t" data-i18n-cat="col.p1.c">
         <div class="prod-media h-[320px] sm:h-[500px] lg:h-[760px]">
-          <img src="images/collection-1-collar.png" alt="" loading="lazy"
+          <img src="images/collection-1-collar.webp" width="1024" height="1024"
+               alt="Hilal Kolye — 22 ayar el yapımı tören kolyesi"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -363,9 +432,11 @@
     <!-- Card 2 -->
     <article class="card-prod">
       <a class="prod-link block group" href="#" data-lightbox="col.p2"
-         data-img="images/collection-2-solitaire.png" data-i18n-title="col.p2.t" data-i18n-cat="col.p2.c">
+         data-img="images/collection-2-solitaire.webp" data-i18n-title="col.p2.t" data-i18n-cat="col.p2.c">
         <div class="prod-media h-[220px] sm:h-[360px]">
-          <img src="images/collection-2-solitaire.png" alt="" loading="lazy"
+          <img src="images/collection-2-solitaire.webp" width="1024" height="1024"
+               alt="Solitaire İstanbul — 18 ayar pırlanta tek taş yüzük"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -381,9 +452,11 @@
     <!-- Card 3 -->
     <article class="card-prod">
       <a class="prod-link block group" href="#" data-lightbox="col.p3"
-         data-img="images/collection-3-bracelet.png" data-i18n-title="col.p3.t" data-i18n-cat="col.p3.c">
+         data-img="images/collection-3-bracelet.webp" data-i18n-title="col.p3.t" data-i18n-cat="col.p3.c">
         <div class="prod-media h-[220px] sm:h-[360px]">
-          <img src="images/collection-3-bracelet.png" alt="" loading="lazy"
+          <img src="images/collection-3-bracelet.webp" width="1024" height="1024"
+               alt="Sarmaş Bilezik — 22 ayar el örme altın bilezik"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -399,9 +472,11 @@
     <!-- Card 4 -->
     <article class="card-prod">
       <a class="prod-link block group" href="#" data-lightbox="col.p4"
-         data-img="images/collection-4-pendant.png" data-i18n-title="col.p4.t" data-i18n-cat="col.p4.c">
+         data-img="images/collection-4-pendant.webp" data-i18n-title="col.p4.t" data-i18n-cat="col.p4.c">
         <div class="prod-media h-[220px] sm:h-[360px]">
-          <img src="images/collection-4-pendant.png" alt="" loading="lazy"
+          <img src="images/collection-4-pendant.webp" width="1024" height="1024"
+               alt="Mermer Kolye — 18 ayar altın halka kolye"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -417,9 +492,11 @@
     <!-- Card 5 -->
     <article class="card-prod">
       <a class="prod-link block group" href="#" data-lightbox="col.p5"
-         data-img="images/collection-5-band.png" data-i18n-title="col.p5.t" data-i18n-cat="col.p5.c">
+         data-img="images/collection-5-band.webp" data-i18n-title="col.p5.t" data-i18n-cat="col.p5.c">
         <div class="prod-media h-[220px] sm:h-[360px]">
-          <img src="images/collection-5-band.png" alt="" loading="lazy"
+          <img src="images/collection-5-band.webp" width="1024" height="1024"
+               alt="Klasik Alyans — 14 ayar çift altın alyans"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -435,9 +512,11 @@
     <!-- Card 6 -->
     <article class="card-prod">
       <a class="prod-link block group" href="#" data-lightbox="col.p6"
-         data-img="images/collection-6-diamond.png" data-i18n-title="col.p6.t" data-i18n-cat="col.p6.c">
+         data-img="images/collection-6-diamond.webp" data-i18n-title="col.p6.t" data-i18n-cat="col.p6.c">
         <div class="prod-media h-[220px] sm:h-[360px]">
-          <img src="images/collection-6-diamond.png" alt="" loading="lazy"
+          <img src="images/collection-6-diamond.webp" width="1024" height="1024"
+               alt="Sertifikalı Pırlanta — sertifikalı tek taş pırlanta yüzük"
+               loading="lazy"
                class="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105">
           <div class="prod-shimmer"></div>
         </div>
@@ -455,10 +534,11 @@
 
 <!-- ============== STORY (craftsmanship) ============== -->
 <section id="story" class="relative">
-  <!-- Forge sparks background -->
-  <img src="images/craft-forge.png" alt=""
+  <!-- Forge sparks background — decorative atmosphere only, alt empty by design. -->
+  <img src="images/craft-forge.webp" width="1024" height="1024" alt=""
        class="absolute inset-0 w-full h-full object-cover opacity-25"
-       loading="lazy">
+       loading="lazy"
+       aria-hidden="true">
   <div class="absolute inset-0 bg-gradient-to-r from-[#0a0908] via-[#0a0908]/95 to-[#0a0908]/70"></div>
   <div class="absolute inset-0 bg-gradient-to-b from-[#0a0908] via-transparent to-[#0a0908]"></div>
 
@@ -466,9 +546,11 @@
     <div class="relative aspect-[4/5] max-h-[640px]">
       <div class="hidden sm:block absolute -top-5 -right-5 w-3/5 h-1/2 border border-gold/40 pointer-events-none"></div>
       <div class="hidden sm:block absolute -bottom-5 -left-5 w-3/5 h-1/2 border border-gold/40 pointer-events-none"></div>
-      <img src="images/craft-hands.png" alt=""
+      <img src="images/craft-hands.webp" width="1024" height="1024"
+           alt="Altun Atelier ustası — Kapalıçarşı atölyesinde altın işliyor"
            class="w-full h-full object-cover relative z-[1]"
-           loading="lazy">
+           loading="lazy"
+           data-cms="story">
       <div class="absolute inset-0 z-[2] story-shimmer"></div>
     </div>
 
@@ -518,9 +600,11 @@
       </p>
     </div>
     <div class="order-1 lg:order-2 grid grid-cols-2 gap-3 sm:gap-4">
-      <img src="images/bespoke-sketches.png" alt=""
+      <img src="images/bespoke-sketches.webp" width="1024" height="1024"
+           alt="Özel tasarım — el çizimi taslakları ve ölçü şablonları"
            class="w-full aspect-[3/4] sm:aspect-[4/5] object-cover col-span-1" loading="lazy">
-      <img src="images/lifestyle-band.png" alt=""
+      <img src="images/lifestyle-band.webp" width="1024" height="1024"
+           alt="Altın alyans — gelin elinde detay"
            class="w-full aspect-[3/4] sm:aspect-[4/5] object-cover col-span-1 sm:mt-10" loading="lazy">
     </div>
   </div>
@@ -567,8 +651,10 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
       <figure class="trust-card group">
         <div class="overflow-hidden">
-          <img src="images/trust-boutique.png" alt=""
-               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+          <img src="images/trust-boutique.webp" width="1024" height="1024"
+               alt="Altun Atelier butiği — Kapalıçarşı'daki atölye girişi"
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy"
+               data-cms="trust" data-trust-slot="0">
         </div>
         <figcaption class="trust-cap">
           <strong class="font-serif text-xl text-ink" data-i18n="trust.c1.t">Atölye</strong>
@@ -578,8 +664,10 @@
 
       <figure class="trust-card group">
         <div class="overflow-hidden">
-          <img src="images/trust-service.png" alt=""
-               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+          <img src="images/trust-service.webp" width="1024" height="1024"
+               alt="Birebir danışma — atölyede müşteri görüşmesi"
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy"
+               data-cms="trust" data-trust-slot="1">
         </div>
         <figcaption class="trust-cap">
           <strong class="font-serif text-xl text-ink" data-i18n="trust.c2.t">Birebir Danışma</strong>
@@ -589,8 +677,10 @@
 
       <figure class="trust-card group">
         <div class="overflow-hidden">
-          <img src="images/trust-packaging.png" alt=""
-               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy">
+          <img src="images/trust-packaging.webp" width="1024" height="1024"
+               alt="İmzalı kadife mücevher kutusu — Altun Atelier ambalajı"
+               class="w-full aspect-[4/3] object-cover transition-transform duration-[1200ms] group-hover:scale-105" loading="lazy"
+               data-cms="trust" data-trust-slot="2">
         </div>
         <figcaption class="trust-cap">
           <strong class="font-serif text-xl text-ink" data-i18n="trust.c3.t">İmzalı Kutu</strong>
@@ -611,25 +701,25 @@
 
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
     <figure class="tile aspect-square md:row-span-2 md:aspect-auto">
-      <img src="images/gallery-1.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/gallery-1.webp" width="1024" height="1024" alt="Atölyeden — el yapımı altın detayı" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square">
-      <img src="images/lifestyle-earring.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/lifestyle-earring.webp" width="1024" height="1024" alt="Altın küpe — günlük şıklık" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square">
-      <img src="images/gallery-2.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/gallery-2.webp" width="1024" height="1024" alt="Atölyeden — usta elinde altın işçiliği" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square md:col-span-2">
-      <img src="images/gallery-3.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/gallery-3.webp" width="1024" height="1024" alt="Atölyeden — sıcak ışıkta altın koleksiyonu" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square">
-      <img src="images/lifestyle-band.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/lifestyle-band.webp" width="1024" height="1024" alt="Alyans detayı — gelin elinde" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square">
-      <img src="images/collection-3-bracelet.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/collection-3-bracelet.webp" width="1024" height="1024" alt="22 ayar el örme altın bilezik" loading="lazy" class="tile-img">
     </figure>
     <figure class="tile aspect-square">
-      <img src="images/collection-6-diamond.png" alt="" loading="lazy" class="tile-img">
+      <img src="images/collection-6-diamond.webp" width="1024" height="1024" alt="Sertifikalı tek taş pırlanta yüzük" loading="lazy" class="tile-img">
     </figure>
   </div>
 
@@ -641,8 +731,11 @@
 
 <!-- ============== EMOTIONAL BANNER (couple) ============== -->
 <section class="quote-section relative h-[60vh] sm:h-[80vh] min-h-[380px] flex items-center justify-center text-center overflow-hidden">
-  <img src="images/lifestyle-couple.png" alt=""
-       class="absolute inset-0 w-full h-full object-cover" loading="lazy">
+  <!-- Background image is decorative; the testimonial below is the content. -->
+  <img src="images/lifestyle-couple.webp" width="1024" height="1024" alt=""
+       class="absolute inset-0 w-full h-full object-cover" loading="lazy"
+       data-cms="banner"
+       aria-hidden="true">
   <div class="absolute inset-0 bg-gradient-to-b from-[#0a0908]/70 via-[#0a0908]/40 to-[#0a0908]/90"></div>
   <blockquote class="relative z-10 max-w-3xl px-6">
     <p class="font-serif italic text-2xl sm:text-3xl lg:text-4xl text-ink leading-snug mb-6" data-i18n="quote.body">
@@ -696,16 +789,20 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <label class="flex flex-col gap-2">
         <span class="form-lbl" data-i18n="form.name">İsim</span>
-        <input name="name" required class="form-input">
+        <input name="name" required class="form-input"
+               autocomplete="name" autocapitalize="words" spellcheck="false"
+               minlength="2" maxlength="120">
       </label>
       <label class="flex flex-col gap-2">
         <span class="form-lbl" data-i18n="form.email">E-posta</span>
-        <input name="email" type="email" required class="form-input">
+        <input name="email" type="email" required class="form-input"
+               autocomplete="email" inputmode="email" spellcheck="false"
+               maxlength="200">
       </label>
     </div>
     <label class="flex flex-col gap-2">
       <span class="form-lbl" data-i18n="form.interest">İlgilendiğiniz</span>
-      <select name="interest" class="form-input">
+      <select name="interest" class="form-input" autocomplete="off">
         <option data-i18n="form.i1">Özel Tasarım</option>
         <option data-i18n="form.i2">Nişan / Alyans</option>
         <option data-i18n="form.i3">Koleksiyondan Bir Parça</option>
@@ -714,7 +811,8 @@
     </label>
     <label class="flex flex-col gap-2">
       <span class="form-lbl" data-i18n="form.msg">Notunuz</span>
-      <textarea name="message" rows="4" required class="form-input resize-y"></textarea>
+      <textarea name="message" rows="4" required class="form-input resize-y"
+                maxlength="2000"></textarea>
     </label>
     <div class="flex flex-wrap items-center gap-4">
       <button type="submit" class="btn btn-gold" data-i18n="form.send">Gönder</button>

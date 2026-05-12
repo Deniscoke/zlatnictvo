@@ -272,9 +272,36 @@ h3{ font-size:1.15rem }
   padding-bottom:.4rem;
   border-bottom:1px solid var(--line);
   letter-spacing:.04em;
+  display:flex;
+  align-items:baseline;
+  gap:.75rem;
+  flex-wrap:wrap;
 }
 .adm-section-title:first-of-type{ margin-top:1rem }
 .adm-grid + .adm-section-title{ margin-top:2rem }
+
+.adm-slot-info{
+  font-family:'Inter',sans-serif;
+  font-size:.7rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  font-weight:400;
+}
+.adm-slot-info.is-full{ color:var(--gold) }
+.adm-slot-info.is-over{ color:var(--danger) }
+
+.adm-hint{
+  font-size:.82rem;
+  color:var(--ink-3);
+  margin:.5rem 0 0;
+  padding:.6rem .85rem;
+  background:rgba(168,128,31,.06);
+  border-left:3px solid var(--gold);
+  border-radius:0 3px 3px 0;
+  font-style:italic;
+}
+.adm-hint:empty{ display:none }
 
 /* Upload queue items show their category as a badge */
 .adm-queue li .cat-badge{

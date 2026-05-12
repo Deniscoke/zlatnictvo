@@ -2,6 +2,8 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/images/(.*)",
@@ -40,7 +42,11 @@
         { "key": "X-Content-Type-Options",  "value": "nosniff" },
         { "key": "X-Frame-Options",          "value": "SAMEORIGIN" },
         { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy",       "value": "camera=(), microphone=(), geolocation=()" }
+        { "key": "Permissions-Policy",       "value": "camera=(), microphone=(), geolocation=()" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; img-src 'self' data: https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://api.web3forms.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://api.web3forms.com; upgrade-insecure-requests"
+        }
       ]
     }
   ]
