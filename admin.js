@@ -307,8 +307,10 @@ async function uploadOne(file, li, category, title) {
   } catch (err) {
     li.classList.remove('is-uploading');
     li.classList.add('is-error');
-    stateEl.textContent = 'Hata';
-    console.error(err);
+    // Show the actual server error message so config issues are diagnosable
+    const msg = err?.message || 'Hata';
+    stateEl.textContent = msg.length > 60 ? msg.slice(0, 57) + '…' : msg;
+    stateEl.title = msg; // full message on hover
   }
 }
 
